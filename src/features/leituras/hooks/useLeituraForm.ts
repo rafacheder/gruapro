@@ -88,7 +88,7 @@ export function useLeituraForm() {
   }, [handleSelectMachine]);
 
   useEffect(() => {
-    let timer: any;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (isScanning && !scannerRef.current) {
       timer = setTimeout(() => {
         const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
@@ -99,7 +99,7 @@ export function useLeituraForm() {
     return () => {
       if (timer) clearTimeout(timer);
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error(err));
+        scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
         scannerRef.current = null;
       }
     };
@@ -204,6 +204,7 @@ export function useLeituraForm() {
     setPreviews([]);
     setUltimaLeitura(null);
     setVariacao(null);
+    setCurrentClienteId(null); // Fix: Reset customer filter when resetting form
   };
 
   const handleSubmit = async (e?: React.FormEvent, proxima: boolean = false) => {

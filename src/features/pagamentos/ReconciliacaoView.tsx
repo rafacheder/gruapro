@@ -66,38 +66,57 @@
    };
  
    const handleSave = async () => {
-     if (!selectedPagamento || selectedLeituras.length === 0) return;
-     setSaving(true);
-     try {
-       const links = selectedLeituras.map(lid => {
-         const leitura = pendingLeituras.find(l => l.id === lid);
-         return {
-           pagamento_id: selectedPagamento.id,
-           leitura_id: lid,
-           valor_aplicado: leitura?.valor_comissao || 0
-         };
-       });
- 
-       const { error: linkError } = await supabase
-         .from("pagamento_leituras")
-         .insert(links);
-       if (linkError) throw linkError;
- 
-       const { error: statusError } = await supabase
-         .from("leituras")
-         .update({ status: "pago" })
-         .in("id", selectedLeituras);
-       if (statusError) throw statusError;
- 
-       toast.success("Vínculo criado com sucesso!");
-       setSelectedPagamento(null);
-       loadUnlinkedPagamentos();
-     } catch (err) {
-       console.error(err);
-       toast.error("Erro ao salvar reconciliação");
-     } finally {
-       setSaving(false);
-     }
+    if (!selectedPagamento || selectedLeituras.length === 0) return;
+    
+    const totalSelecionado = pendingLeituras
+      .filter(l => selectedLeituras.includes(l.id))
+      .reduce((acc, curr) => acc + Number(curr.valor_comissao), 0);
+
+    if (Math.abs(totalSelecionado - Number(selectedPagamento.valor)) > 0.01) {
+      if (!confirm(`O valor total selecionado (${formatBRL(totalSelecionado)}) é diferente do valor do pagamento (${formatBRL(selectedPagamento.valor)}). Deseja continuar?`)) {
+        return;
+      }
+    }
+
+    setSaving(true);
+    try {
+      const links = selectedLeituras.map(lid => {
+        const leitura = pendingLeituras.find(l => l.id === lid);
+        return {
+          pagamento_id: selectedPagamento.id,
+          leitura_id: lid,
+          valor_aplicado: leitura?.valor_comissao || 0
+        };
+      });
+
+      // Note: Ideally these should be in a single RPC transaction
+      const { error: linkError } = await supabase
+        .from("pagamento_leituras")
+        .insert(links);
+      
+      if (linkError) throw linkError;
+
+      const { error: statusError } = await supabase
+        .from("leituras")
+        .update({ status: "pago" })
+        .in("id", selectedLeituras);
+      
+      if (statusError) {
+        // Critical: Links were created but status didn't update
+        console.error("Partial failure: links created but readings status not updated", statusError);
+        toast.error("Vínculos criados, mas erro ao atualizar status das leituras. Por favor, verifique manualmente.");
+      } else {
+        toast.success("Vínculo criado com sucesso!");
+      }
+
+      setSelectedPagamento(null);
+      await loadUnlinkedPagamentos();
+    } catch (err) {
+      console.error("Reconciliation error:", err);
+      toast.error("Erro ao salvar reconciliação");
+    } finally {
+      setSaving(false);
+    }
    };
  
    if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>;
