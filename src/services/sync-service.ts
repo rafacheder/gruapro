@@ -3,7 +3,7 @@
  import { logAudit } from '@/lib/audit';
  
  export async function saveOfflineLeitura(
-   data: Omit<PendingLeitura, 'id' | 'status' | 'created_at'>,
+   data: Omit<PendingLeitura, 'id' | 'status' | 'created_at' | 'tempId'>,
    fotos: { campo: string; blob: Blob; fileName: string }[]
  ) {
    const tempId = crypto.randomUUID();
