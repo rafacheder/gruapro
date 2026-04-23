@@ -433,6 +433,59 @@ export type Database = {
           },
         ]
       }
+      pagamento_leituras: {
+        Row: {
+          created_at: string | null
+          id: string
+          leitura_id: string
+          pagamento_id: string
+          valor_aplicado: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          leitura_id: string
+          pagamento_id: string
+          valor_aplicado: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          leitura_id?: string
+          pagamento_id?: string
+          valor_aplicado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamento_leituras_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: true
+            referencedRelation: "leituras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_leituras_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: true
+            referencedRelation: "vw_leituras_com_anterior"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_leituras_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: true
+            referencedRelation: "vw_ultimas_leituras_por_maquina"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamento_leituras_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pagamentos: {
         Row: {
           cliente_id: string
@@ -734,7 +787,7 @@ export type Database = {
     }
     Enums: {
       app_role: "master" | "admin" | "usuario"
-      leitura_status: "pendente_pagamento" | "pago" | "cancelado"
+      leitura_status: "pendente" | "pago" | "cancelado"
       manutencao_tipo: "preventiva" | "corretiva"
       maquina_status: "ativa" | "manutencao" | "removida" | "desativada"
       pagamento_forma: "dinheiro" | "pix" | "transferencia" | "outro"
@@ -866,7 +919,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["master", "admin", "usuario"],
-      leitura_status: ["pendente_pagamento", "pago", "cancelado"],
+      leitura_status: ["pendente", "pago", "cancelado"],
       manutencao_tipo: ["preventiva", "corretiva"],
       maquina_status: ["ativa", "manutencao", "removida", "desativada"],
       pagamento_forma: ["dinheiro", "pix", "transferencia", "outro"],
