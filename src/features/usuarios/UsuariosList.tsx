@@ -6,7 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from "@/components/PageHeader";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+ import { Loader2, Plus, UserPlus } from "lucide-react";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { Label } from "@/components/ui/label";
 import { logAudit } from "@/lib/audit";
 
 interface Row { id: string; nome_completo: string; email: string | null; ativo: boolean; role: AppRole | null; }
@@ -14,7 +18,29 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
 export default function UsuariosList() {
   const { role: myRole, user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
+   const [loading, setLoading] = useState(true);
+   const [creating, setCreating] = useState(false);
+   const [open, setOpen] = useState(false);
+   const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
+   const createUser = async (e: React.FormEvent) => {
+     e.preventDefault();
+     setCreating(true);
+     try {
+       const { data, error } = await supabase.functions.invoke("manage-users", {
+         body: { action: "create", ...formData },
+       });
+       if (error) throw error;
+       toast.success("Usuário criado com sucesso");
+       setOpen(false);
+       setFormData({ username: "", password: "", nome_completo: "" });
+       load();
+     } catch (err: any) {
+       toast.error(err.message || "Erro ao criar usuário");
+     } finally {
+       setCreating(false);
+     }
+   };
+ 
 
   const load = async () => {
     setLoading(true);
@@ -47,8 +73,59 @@ export default function UsuariosList() {
   };
 
   return (
-    <div>
-      <PageHeader title="Usuários" description="Gerencie quem acessa o sistema" />
+     <div className="space-y-6">
+       <div className="flex justify-between items-center">
+         <PageHeader title="Usuários" description="Gerencie quem acessa o sistema" />
+         <Dialog open={open} onOpenChange={setOpen}>
+           <DialogTrigger asChild>
+             <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+               <Plus className="h-4 w-4 mr-2" />
+               Novo Usuário
+             </Button>
+           </DialogTrigger>
+           <DialogContent>
+             <DialogHeader>
+               <DialogTitle>Criar Novo Usuário</DialogTitle>
+             </DialogHeader>
+             <form onSubmit={createUser} className="space-y-4 pt-4">
+               <div className="space-y-2">
+                 <Label htmlFor="new-name">Nome Completo</Label>
+                 <Input
+                   id="new-name"
+                   value={formData.nome_completo}
+                   onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
+                   required
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="new-username">Usuário (ou Email)</Label>
+                 <Input
+                   id="new-username"
+                   value={formData.username}
+                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                   required
+                   placeholder="Ex: joao"
+                 />
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="new-password">Senha</Label>
+                 <Input
+                   id="new-password"
+                   type="password"
+                   value={formData.password}
+                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                   required
+                   minLength={6}
+                 />
+               </div>
+               <Button type="submit" className="w-full bg-accent" disabled={creating}>
+                 {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                 Criar Usuário
+               </Button>
+             </form>
+           </DialogContent>
+         </Dialog>
+       </div>
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
       ) : (
@@ -74,9 +151,6 @@ export default function UsuariosList() {
               )}
             </Card>
           ))}
-          <p className="text-xs text-muted-foreground mt-4">
-            Para criar um novo usuário, peça que ele acesse a tela de login e crie a conta. Depois, defina o papel aqui.
-          </p>
         </div>
       )}
     </div>

@@ -13,8 +13,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
+   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [nome, setNome] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -30,23 +29,10 @@ export default function Login() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      if (mode === "login") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Bem-vindo!");
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { nome_completo: nome },
-          },
-        });
-        if (error) throw error;
-        toast.success("Conta criada! Você já pode entrar.");
-        setMode("login");
-      }
+       const email = identifier.includes("@") ? identifier : `${identifier}@system.local`;
+       const { error } = await supabase.auth.signInWithPassword({ email, password });
+       if (error) throw error;
+       toast.success("Bem-vindo!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro desconhecido";
       toast.error(msg);
@@ -69,24 +55,17 @@ export default function Login() {
         </div>
         <Card className="p-6 shadow-elevated bg-card">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <h2 className="text-xl font-semibold">{mode === "login" ? "Entrar" : "Criar conta"}</h2>
-            {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="nome">Nome completo</Label>
-                <Input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} required />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
-            </div>
+             <h2 className="text-xl font-semibold">Entrar</h2>
+             <div className="space-y-2">
+               <Label htmlFor="identifier">Usuário ou Email</Label>
+               <Input
+                 id="identifier"
+                 value={identifier}
+                 onChange={(e) => setIdentifier(e.target.value)}
+                 required
+                 placeholder="Ex: joao ou joao@email.com"
+               />
+             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
               <Input
@@ -96,20 +75,13 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={submitting}>
-              {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {mode === "login" ? "Entrar" : "Criar conta"}
-            </Button>
-            <button
-              type="button"
-              className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
-              onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            >
-              {mode === "login" ? "Não tem conta? Criar uma" : "Já tem conta? Entrar"}
-            </button>
+             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={submitting}>
+               {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+               Entrar
+             </Button>
           </form>
         </Card>
         <p className="text-xs text-center text-muted-foreground mt-4">
