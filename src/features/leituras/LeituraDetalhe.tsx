@@ -234,22 +234,33 @@ export default function LeituraDetalhe() {
          }`} />
          
          {leitura.contador_entrada_atual !== null && (
-           <>
-             <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-2">
-               <div>
-                 <div className="text-[10px] text-muted-foreground uppercase font-bold">Contadores</div>
-                 <div className="text-xs">
-                   E: {leitura.contador_entrada_anterior} → {leitura.contador_entrada_atual} ({leitura.contador_entrada_atual - leitura.contador_entrada_anterior})
-                   <br />
-                   S: {leitura.contador_saida_anterior} → {leitura.contador_saida_atual} ({leitura.contador_saida_atual - leitura.contador_saida_anterior})
-                 </div>
-               </div>
-               <div className="text-right">
-                 <div className="text-[10px] text-muted-foreground uppercase font-bold">Valor/Cred.</div>
-                 <div className="text-xs font-semibold">{formatBRL(leitura.valor_por_credito)}</div>
-               </div>
-             </div>
-           </>
+            <div className="border-b border-border/50 pb-3 mb-3">
+              <div className="flex justify-between items-center mb-2">
+                <div className="text-[10px] text-muted-foreground uppercase font-bold">Contadores</div>
+                <div className="text-[10px] text-muted-foreground uppercase font-bold">Valor/Cred: {formatBRL(leitura.valor_por_credito)}</div>
+              </div>
+              <div className="grid grid-cols-3 gap-y-1 text-[11px] font-mono">
+                <div className="text-muted-foreground font-sans uppercase text-[9px] font-bold">Ref.</div>
+                <div className="text-right font-bold pr-4">ENTRADA</div>
+                <div className="text-right font-bold pr-2">SAÍDA</div>
+                
+                <div className="text-muted-foreground font-sans">ANTERIOR</div>
+                <div className="text-right pr-4">{leitura.contador_entrada_anterior ?? 0}</div>
+                <div className="text-right pr-2">{leitura.contador_saida_anterior ?? 0}</div>
+                
+                <div className="text-muted-foreground font-sans">ATUAL</div>
+                <div className="text-right pr-4">{leitura.contador_entrada_atual ?? 0}</div>
+                <div className="text-right pr-2">{leitura.contador_saida_atual ?? 0}</div>
+                
+                <div className="text-accent font-sans font-bold pt-1">DIFERENÇA</div>
+                <div className="text-right font-bold text-accent pr-4 pt-1">
+                  {leitura.contador_entrada_atual - leitura.contador_entrada_anterior}
+                </div>
+                <div className="text-right font-bold text-accent pr-2 pt-1">
+                  {leitura.contador_saida_atual - leitura.contador_saida_anterior}
+                </div>
+              </div>
+            </div>
          )}
          <div className="flex items-center justify-between">
            <span className="text-muted-foreground text-sm">Valor faturado</span>
