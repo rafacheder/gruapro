@@ -43,7 +43,7 @@
        const { data: clientsData } = await supabase
          .from("clientes")
          .select("id, nome_ponto")
-         .eq("status", "ativo")
+         .eq("ativo", true)
          .order("nome_ponto");
        
        if (clientsData) {
