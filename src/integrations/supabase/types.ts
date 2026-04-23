@@ -640,6 +640,7 @@ export type Database = {
           pelucias_saidas: number | null
           pelucias_saidas_previa: number | null
           percentual_aplicado: number | null
+          rn_desc: number | null
           status: Database["public"]["Enums"]["leitura_status"] | null
           updated_at: string | null
           usuario_id: string | null
