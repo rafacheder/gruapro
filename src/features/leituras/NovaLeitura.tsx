@@ -55,8 +55,9 @@ export default function NovaLeitura() {
   const [mediaAnterior, setMediaAnterior] = useState<number | null>(null);
 
    useEffect(() => {
+     let timer: any;
      if (isScanning && !scannerRef.current) {
-       const timer = setTimeout(() => {
+       timer = setTimeout(() => {
          const scanner = new Html5QrcodeScanner(
            "qr-reader",
            { fps: 10, qrbox: { width: 250, height: 250 } },
@@ -65,9 +66,9 @@ export default function NovaLeitura() {
          scannerRef.current = scanner;
          scanner.render(onScanSuccess, onScanFailure);
        }, 100);
-       return () => clearTimeout(timer);
      }
      return () => {
+       if (timer) clearTimeout(timer);
        if (scannerRef.current) {
          scannerRef.current.clear().catch(err => console.error("Error clearing scanner", err));
          scannerRef.current = null;
