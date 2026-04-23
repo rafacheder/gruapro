@@ -127,9 +127,7 @@ export default function RegisterPaymentDialog({
          .filter(l => selectedLeituras.includes(l.id))
          .reduce((acc, curr) => acc + curr.valor_comissao, 0);
        
-       if (total > 0) {
-         form.setValue("valor", total.toFixed(2).replace(".", ","));
-       }
+        form.setValue("valor", total.toFixed(2).replace(".", ","));
      }
    }, [selectedLeituras, pendingLeituras, isAvulso]);
 
@@ -360,7 +358,15 @@ export default function RegisterPaymentDialog({
                   <FormItem>
                     <FormLabel>Valor (R$)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                      <Input 
+                        placeholder="0,00" 
+                        {...field} 
+                        onChange={(e) => {
+                          // Allow only numbers and comma
+                          const value = e.target.value.replace(/[^0-9,]/g, "");
+                          field.onChange(value);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
