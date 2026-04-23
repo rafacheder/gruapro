@@ -16,8 +16,10 @@ export default function LeiturasList() {
   const { role } = useAuth();
   const showFinancials = canSeeFinancials(role);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+   const [items, setItems] = useState<any[]>([]);
+   const [filteredItems, setFilteredItems] = useState<any[]>([]);
+   const [statusFilter, setStatusFilter] = useState("all");
+   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase
@@ -38,8 +40,19 @@ export default function LeiturasList() {
           ) : null;
           return { ...l, variacao };
         });
-        setItems(mapped);
-        setLoading(false);
+         setItems(mapped);
+         setFilteredItems(mapped);
+         setLoading(false);
+       });
+   }, []);
+ 
+   useEffect(() => {
+     if (statusFilter === "all") {
+       setFilteredItems(items);
+     } else {
+       setFilteredItems(items.filter(i => i.status === statusFilter));
+     }
+   }, [statusFilter, items]);
       });
   }, []);
 
