@@ -152,6 +152,13 @@ export type Database = {
             referencedRelation: "leituras"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "leitura_fotos_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ultimas_leituras_por_maquina"
+            referencedColumns: ["id"]
+          },
         ]
       }
       leitura_pelucias_detalhe: {
@@ -179,6 +186,13 @@ export type Database = {
             columns: ["leitura_id"]
             isOneToOne: false
             referencedRelation: "leituras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leitura_pelucias_detalhe_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: false
+            referencedRelation: "vw_ultimas_leituras_por_maquina"
             referencedColumns: ["id"]
           },
           {
@@ -595,7 +609,51 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_ultimas_leituras_por_maquina: {
+        Row: {
+          aprovada_por: string | null
+          assinatura_base64: string | null
+          cliente_id: string | null
+          created_at: string | null
+          data_leitura: string | null
+          id: string | null
+          maquina_id: string | null
+          observacoes: string | null
+          offline_synced: boolean | null
+          pelucias_saidas: number | null
+          percentual_aplicado: number | null
+          rn: number | null
+          status: Database["public"]["Enums"]["leitura_status"] | null
+          updated_at: string | null
+          usuario_id: string | null
+          valor_comissao: number | null
+          valor_faturado: number | null
+          valor_liquido: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leituras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_usuario_id_profiles_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_role: {
