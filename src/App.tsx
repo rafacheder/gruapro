@@ -3,10 +3,31 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Login from "./pages/Login.tsx";
+import Dashboard from "./pages/Dashboard.tsx";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import AppShell from "@/components/AppShell";
+import ClientesList from "@/features/clientes/ClientesList";
+import ClienteForm from "@/features/clientes/ClienteForm";
+import ClienteDetalhe from "@/features/clientes/ClienteDetalhe";
+import MaquinasList from "@/features/maquinas/MaquinasList";
+import MaquinaForm from "@/features/maquinas/MaquinaForm";
+import MaquinaDetalhe from "@/features/maquinas/MaquinaDetalhe";
+import LeiturasList from "@/features/leituras/LeiturasList";
+import NovaLeitura from "@/features/leituras/NovaLeitura";
+import LeituraDetalhe from "@/features/leituras/LeituraDetalhe";
+import UsuariosList from "@/features/usuarios/UsuariosList";
+import AuditLog from "@/features/audit/AuditLog";
 
 const queryClient = new QueryClient();
+
+const Shell = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute>
+    <AppShell>{children}</AppShell>
+  </ProtectedRoute>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -14,11 +35,34 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={<Shell><Dashboard /></Shell>} />
+            <Route path="/clientes" element={<Shell><ClientesList /></Shell>} />
+            <Route path="/clientes/novo" element={<Shell><ClienteForm /></Shell>} />
+            <Route path="/clientes/:id" element={<Shell><ClienteDetalhe /></Shell>} />
+            <Route path="/clientes/:id/editar" element={<Shell><ClienteForm /></Shell>} />
+            <Route path="/maquinas" element={<Shell><MaquinasList /></Shell>} />
+            <Route path="/maquinas/nova" element={<Shell><MaquinaForm /></Shell>} />
+            <Route path="/maquinas/:id" element={<Shell><MaquinaDetalhe /></Shell>} />
+            <Route path="/maquinas/:id/editar" element={<Shell><MaquinaForm /></Shell>} />
+            <Route path="/leituras" element={<Shell><LeiturasList /></Shell>} />
+            <Route path="/leituras/nova" element={<Shell><NovaLeitura /></Shell>} />
+            <Route path="/leituras/:id" element={<Shell><LeituraDetalhe /></Shell>} />
+            <Route path="/usuarios" element={
+              <ProtectedRoute requireRoles={["master", "admin"]}>
+                <AppShell><UsuariosList /></AppShell>
+              </ProtectedRoute>
+            } />
+            <Route path="/audit" element={
+              <ProtectedRoute requireRoles={["master"]}>
+                <AppShell><AuditLog /></AppShell>
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
