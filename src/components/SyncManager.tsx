@@ -1,6 +1,6 @@
  import { useEffect } from "react";
  import { useOnlineStatus } from "@/hooks/use-online-status";
- import { syncPendingLeituras } from "@/services/sync-service";
+ import { syncPendingLeituras, cleanupSyncedLeituras } from "@/services/sync-service";
  import { db } from "@/lib/db";
  
  export default function SyncManager() {
@@ -18,6 +18,7 @@
      };
  
      runSync();
+     cleanupSyncedLeituras();
    }, [isOnline]);
  
    return null;
