@@ -33,7 +33,19 @@ interface Stats {
 export default function Dashboard() {
   const { role, nome } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<Stats | null>(null);
+   const [stats, setStats] = useState<Stats | null>(null);
+   const [periodType, setPeriodType] = useState<PeriodType>("mes");
+   const [customRange, setCustomRange] = useState<DateRange | undefined>({
+     from: new Date(),
+     to: new Date()
+   });
+   const periodDates = useMemo(() => {
+     const range = customRange?.from && customRange?.to 
+       ? { from: customRange.from, to: customRange.to } 
+       : undefined;
+     return getPeriodDates(periodType, range);
+   }, [periodType, customRange]);
+ 
   const [alertas, setAlertas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
