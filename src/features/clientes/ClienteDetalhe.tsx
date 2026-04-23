@@ -106,18 +106,16 @@ export default function ClienteDetalhe() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => {
-                        const limit = 30;
-                        const ids = leituras.slice(0, limit).map(l => l.id);
+                        const ids = leituras.slice(0, 30).map(l => l.id);
                         if (ids.length === 0) return;
-                        navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+                        navigate(`/leituras/consolidado?ids=${ids.join(",")}&format=a4`);
                       }}>
                         <FileText className="h-4 w-4 mr-2" /> PDF A4 (Padrão)
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => {
-                        const limit = 30;
-                        const ids = leituras.slice(0, limit).map(l => l.id);
+                        const ids = leituras.slice(0, 30).map(l => l.id);
                         if (ids.length === 0) return;
-                        navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+                        navigate(`/leituras/consolidado?ids=${ids.join(",")}&format=thermal`);
                       }}>
                         <Printer className="h-4 w-4 mr-2" /> PDF Bobina 57mm
                       </DropdownMenuItem>
