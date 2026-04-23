@@ -183,7 +183,7 @@ export default function LeituraDetalhe() {
         )}
         <div className="flex items-center justify-between pt-2">
           <Badge variant={leitura.status === "pago" ? "default" : "secondary"}>
-            {leitura.status === "pendente_pagamento" ? "Pendente" : leitura.status}
+            {leitura.status === "pendente" ? "Pendente" : leitura.status}
           </Badge>
         </div>
       </Card>

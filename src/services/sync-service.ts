@@ -50,7 +50,7 @@ export async function syncPendingLeituras() {
           percentual_aplicado: leitura.percentual_comissao,
           observacoes: leitura.observacoes,
           data_leitura: leitura.data_leitura,
-          status: 'pendente_pagamento'
+          status: 'pendente'
         })
         .select('id')
         .single();

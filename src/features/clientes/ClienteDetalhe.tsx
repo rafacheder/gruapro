@@ -62,7 +62,7 @@ export default function ClienteDetalhe() {
   if (!cliente) return <div>Cliente não encontrado</div>;
 
   const totalComissaoPendente = leituras
-    .filter((l) => l.status === "pendente_pagamento")
+    .filter((l) => l.status === "pendente")
     .reduce((s, l) => s + Number(l.valor_comissao), 0);
 
   return (

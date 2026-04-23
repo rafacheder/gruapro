@@ -100,7 +100,7 @@ export default function LeiturasList() {
                     <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
                   )}
                   <Badge variant={l.status === "pago" ? "default" : "secondary"} className="mt-1">
-                    {l.status === "pendente_pagamento" ? "pendente" : l.status}
+                    {l.status === "pendente" ? "pendente" : l.status}
                   </Badge>
                 </div>
               </Card>
