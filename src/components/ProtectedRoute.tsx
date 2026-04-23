@@ -19,7 +19,10 @@ export default function ProtectedRoute({ children, requireRoles }: Props) {
     );
   }
 
-  if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
+   if (!user) {
+     const fullPath = location.pathname + location.search;
+     return <Navigate to="/login" state={{ from: fullPath }} replace />;
+   }
   if (requireRoles && role && !requireRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }

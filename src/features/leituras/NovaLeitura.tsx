@@ -9,7 +9,8 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Loader2, X, AlertTriangle } from "lucide-react";
+ import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode } from "lucide-react";
+ import { Html5QrcodeScanner } from "html5-qrcode";
 import { calcComissao, formatBRL } from "@/lib/format";
 import { logAudit } from "@/lib/audit";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,7 +42,10 @@ export default function NovaLeitura() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [maquinas, setMaquinas] = useState<MaquinaOpt[]>([]);
-  const [maquinaId, setMaquinaId] = useState(searchParams.get("maquina") || "");
+   const maquinaIdParam = searchParams.get("maquina_id") || searchParams.get("maquina");
+   const [maquinaId, setMaquinaId] = useState(maquinaIdParam || "");
+   const [isScanning, setIsScanning] = useState(false);
+   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const [valorFaturado, setValorFaturado] = useState("");
   const [pelucias, setPelucias] = useState("");
   const [observacoes, setObservacoes] = useState("");
@@ -50,6 +54,65 @@ export default function NovaLeitura() {
   const [saving, setSaving] = useState(false);
   const [mediaAnterior, setMediaAnterior] = useState<number | null>(null);
 
+   useEffect(() => {
+     if (isScanning && !scannerRef.current) {
+       const timer = setTimeout(() => {
+         const scanner = new Html5QrcodeScanner(
+           "qr-reader",
+           { fps: 10, qrbox: { width: 250, height: 250 } },
+           /* verbose= */ false
+         );
+         scannerRef.current = scanner;
+         scanner.render(onScanSuccess, onScanFailure);
+       }, 100);
+       return () => clearTimeout(timer);
+     }
+     return () => {
+       if (scannerRef.current) {
+         scannerRef.current.clear().catch(err => console.error("Error clearing scanner", err));
+         scannerRef.current = null;
+       }
+     };
+   }, [isScanning]);
+ 
+   async function onScanSuccess(decodedText: string) {
+     try {
+       const url = new URL(decodedText);
+       const mid = url.searchParams.get("maquina_id");
+       if (mid) {
+         await handleSelectMachine(mid);
+       } else {
+         toast.error("QR Code inválido para este sistema");
+       }
+     } catch (e) {
+       toast.error("QR Code não contém uma URL válida");
+     }
+   }
+ 
+   function onScanFailure() { }
+ 
+   const handleSelectMachine = async (id: string) => {
+     const { data: maquina, error } = await supabase
+       .from("maquinas")
+       .select("id, status")
+       .eq("id", id)
+       .maybeSingle();
+ 
+     if (error || !maquina) {
+       toast.error("Máquina não encontrada");
+       return;
+     }
+ 
+     if (maquina.status !== "ativa") {
+       toast.error(`Máquina está com status: ${maquina.status}`);
+       return;
+     }
+ 
+     setMaquinaId(id);
+     setIsScanning(false);
+     toast.success("Máquina selecionada via QR Code!");
+   };
+ 
   useEffect(() => {
     supabase
       .from("maquinas")
@@ -163,9 +226,27 @@ export default function NovaLeitura() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="p-5 space-y-4 bg-card">
-          <div className="space-y-2">
-            <Label>Máquina *</Label>
-            <Select value={maquinaId} onValueChange={setMaquinaId}>
+           <div className="space-y-3">
+             <div className="flex items-center justify-between">
+               <Label>Máquina *</Label>
+               <Button 
+                 type="button" 
+                 variant={isScanning ? "destructive" : "accent"}
+                 size="sm"
+                 onClick={() => setIsScanning(!isScanning)}
+               >
+                 {isScanning ? <X className="h-4 w-4 mr-2" /> : <QrCode className="h-4 w-4 mr-2" />}
+                 {isScanning ? "Fechar scanner" : "Escanear QR Code"}
+               </Button>
+             </div>
+ 
+             {isScanning && (
+               <div className="relative overflow-hidden rounded-lg border-2 border-accent mb-4">
+                 <div id="qr-reader" className="w-full" />
+               </div>
+             )}
+ 
+             <Select value={maquinaId} onValueChange={setMaquinaId}>
               <SelectTrigger><SelectValue placeholder="Selecione a máquina..." /></SelectTrigger>
               <SelectContent>
                 {maquinas.map((m) => (
