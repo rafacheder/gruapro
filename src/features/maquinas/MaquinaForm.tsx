@@ -18,10 +18,13 @@ const schema = z.object({
   codigo_identificacao: z.string().trim().min(1).max(100),
   modelo: z.string().optional(),
   cliente_id: z.string().uuid("Selecione um cliente"),
-  data_instalacao: z.string().optional(),
-  status: z.enum(["ativa", "manutencao", "removida", "desativada"]),
-  observacoes: z.string().optional(),
-});
+   data_instalacao: z.string().optional(),
+   status: z.enum(["ativa", "manutencao", "removida", "desativada"]),
+   observacoes: z.string().optional(),
+   valor_por_credito: z.number().min(0.01, "Valor inválido").default(1.00),
+   contador_entrada_inicial: z.number().int().min(0).default(0),
+   contador_saida_inicial: z.number().int().min(0).default(0),
+ });
 
 type FormData = z.infer<typeof schema>;
 
@@ -35,10 +38,13 @@ export default function MaquinaForm() {
     codigo_identificacao: "",
     modelo: "",
     cliente_id: searchParams.get("cliente") || "",
-    data_instalacao: "",
-    status: "ativa",
-    observacoes: "",
-  });
+     data_instalacao: "",
+     status: "ativa",
+     observacoes: "",
+     valor_por_credito: 1.00,
+     contador_entrada_inicial: 0,
+     contador_saida_inicial: 0,
+   });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(isEdit);
@@ -66,10 +72,13 @@ export default function MaquinaForm() {
           codigo_identificacao: data.codigo_identificacao,
           modelo: data.modelo || "",
           cliente_id: data.cliente_id,
-          data_instalacao: data.data_instalacao || "",
-          status: data.status,
-          observacoes: data.observacoes || "",
-        });
+           data_instalacao: data.data_instalacao || "",
+           status: data.status,
+           observacoes: data.observacoes || "",
+           valor_por_credito: Number(data.valor_por_credito) || 1.00,
+           contador_entrada_inicial: data.contador_entrada_inicial || 0,
+           contador_saida_inicial: data.contador_saida_inicial || 0,
+         });
         setLoading(false);
       });
     }
@@ -158,16 +167,41 @@ export default function MaquinaForm() {
                   <SelectItem value="ativa">Ativa</SelectItem>
                   <SelectItem value="manutencao">Em manutenção</SelectItem>
                   <SelectItem value="removida">Removida</SelectItem>
-                  <SelectItem value="desativada">Desativada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Observações</Label>
-            <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={3} />
-          </div>
-        </Card>
+                   <SelectItem value="desativada">Desativada</SelectItem>
+                 </SelectContent>
+               </Select>
+             </div>
+             <div className="space-y-2">
+               <Label>Valor por Crédito (R$)</Label>
+               <Input 
+                 type="number" 
+                 step="0.01" 
+                 value={form.valor_por_credito} 
+                 onChange={(e) => setForm({ ...form, valor_por_credito: parseFloat(e.target.value) || 0 })} 
+               />
+             </div>
+             <div className="space-y-2">
+               <Label>Contador Entrada Inicial</Label>
+               <Input 
+                 type="number" 
+                 value={form.contador_entrada_inicial} 
+                 onChange={(e) => setForm({ ...form, contador_entrada_inicial: parseInt(e.target.value) || 0 })} 
+               />
+             </div>
+             <div className="space-y-2">
+               <Label>Contador Saída Inicial</Label>
+               <Input 
+                 type="number" 
+                 value={form.contador_saida_inicial} 
+                 onChange={(e) => setForm({ ...form, contador_saida_inicial: parseInt(e.target.value) || 0 })} 
+               />
+             </div>
+           </div>
+           <div className="space-y-2">
+             <Label>Observações</Label>
+             <Textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} rows={3} />
+           </div>
+         </Card>
         <div className="flex gap-3">
           <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="flex-1">Cancelar</Button>
           <Button type="submit" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={saving}>
