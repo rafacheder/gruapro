@@ -80,7 +80,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
 
       if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
       if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
-      if (filters.status !== "all") query = query.eq("status", filters.status);
+       if (filters.status !== "all") query = query.eq("status", filters.status as any);
       if (filters.operadorId !== "all") query = query.eq("usuario_id", filters.operadorId);
       if (filters.startDate) query = query.gte("data_leitura", filters.startDate.toISOString());
       if (filters.endDate) query = query.lte("data_leitura", endOfDay(filters.endDate).toISOString());
@@ -164,26 +164,30 @@ import { calcularVariacao } from "@/utils/reading-calculations";
              </Button>
            </div>
          }
-      />
+       />
+ 
+       <ReadingFilters 
+         filters={filters} 
+         onFiltersChange={setFilters} 
+         onClearFilters={() => setFilters({
+           clienteId: "",
+           maquinaId: "",
+           status: "all",
+           startDate: startOfMonth(new Date()),
+           endDate: new Date(),
+           operadorId: "all"
+         })}
+       />
 
-      <Tabs defaultValue="all" className="w-full" onValueChange={setStatusFilter}>
-        <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
-          <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
-          <TabsTrigger value="pendente" className="text-xs">Pendentes</TabsTrigger>
-          <TabsTrigger value="pago" className="text-xs">Pagas</TabsTrigger>
-          <TabsTrigger value="cancelado" className="text-xs">Canceladas</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
-      ) : filteredItems.length === 0 ? (
+       {loading && page === 0 ? (
+         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
+       ) : items.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Nenhuma leitura encontrada"
-          description={statusFilter === 'all' ? "Faça a primeira leitura para começar." : "Nenhuma leitura com este status."}
+           title="Nenhuma leitura encontrada"
+           description={filters.status === 'all' ? "Faça a primeira leitura para começar." : "Nenhuma leitura com este status."}
           action={
-            statusFilter === 'all' ? (
+             filters.status === 'all' ? (
               <Button onClick={() => navigate("/leituras/nova")} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 <Plus className="h-4 w-4 mr-2" /> Nova leitura
               </Button>
@@ -191,8 +195,9 @@ import { calcularVariacao } from "@/utils/reading-calculations";
           }
         />
       ) : (
-        <div className="space-y-2">
-           {filteredItems.map((l) => (
+         <div className="space-y-4">
+           <div className="space-y-2">
+            {items.map((l) => (
              <div key={l.id} className="relative flex items-center gap-2">
                 {isAdmin && (
                   <input 
@@ -269,8 +274,25 @@ import { calcularVariacao } from "@/utils/reading-calculations";
                </Card>
                </Link>
              </div>
-          ))}
-       </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => fetchData(true)} 
+                disabled={loadingMore}
+                className="w-full sm:w-auto"
+              >
+                {loadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Carregar mais
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       {isAdmin && selectedIds.length > 0 && (
