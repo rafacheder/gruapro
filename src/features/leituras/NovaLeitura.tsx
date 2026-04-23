@@ -418,9 +418,11 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
              📊 Última leitura: {format(parseISO(ultimaLeitura.data_leitura), "dd/MM/yyyy")} (há {diasUltimaLeitura} dias)
            </div>
             <div className="text-xs text-muted-foreground grid grid-cols-3 gap-2">
-             <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
-             <div>Pelúcias: <span className="font-semibold">{ultimaLeitura.pelucias_saidas}</span></div>
-             <div>{formatBRL(faturamentoDiaAnterior)}/dia</div>
+              <div>Entrada: <span className="font-semibold">{ultimaLeitura.contador_entrada_atual || 0}</span></div>
+              <div>Saída: <span className="font-semibold">{ultimaLeitura.contador_saida_atual || 0}</span></div>
+              {ultimaLeitura.valor_faturado !== undefined && (
+                <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
+              )}
            </div>
          </Card>
        )}
@@ -495,30 +497,40 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
           </div>
         </Card>
 
-        <Card className="p-5 space-y-4 bg-card">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Valor faturado (R$) *</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={valorFaturado}
-                onChange={(e) => setValorFaturado(e.target.value.replace(/[^\d.,]/g, ""))}
-                placeholder="0,00"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Pelúcias saídas</Label>
-              <Input
-                type="number"
-                min="0"
-                value={pelucias}
-                onChange={(e) => setPelucias(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-          </div>
+         <Card className="p-5 space-y-4 bg-card">
+           <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+               <Label>Entrada atual *</Label>
+               <Input
+                 type="number"
+                 inputMode="numeric"
+                 value={contadorEntradaAtual}
+                 onChange={(e) => setContadorEntradaAtual(e.target.value)}
+                 placeholder={contadorEntradaAnterior.toString()}
+                 required
+               />
+             </div>
+             <div className="space-y-2">
+               <Label>Saída atual *</Label>
+               <Input
+                 type="number"
+                 inputMode="numeric"
+                 value={contadorSaidaAtual}
+                 onChange={(e) => setContadorSaidaAtual(e.target.value)}
+                 placeholder={contadorSaidaAnterior.toString()}
+                 required
+               />
+             </div>
+             <div className="space-y-2 col-span-2">
+               <Label>Valor por crédito (R$)</Label>
+               <Input
+                 type="text"
+                 inputMode="decimal"
+                 value={valorPorCredito}
+                 onChange={(e) => setValorPorCredito(e.target.value.replace(/[^\d.,]/g, ""))}
+               />
+             </div>
+           </div>
 
           {variacao && variacao.nivelAlerta !== 'normal' && (
             <div className={`flex items-start gap-2 p-3 rounded-md border ${
@@ -538,22 +550,26 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
             </div>
           )}
 
-          {maquinaSel && (
-            <div className="rounded-md bg-gradient-primary p-4 text-primary-foreground space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Faturamento</span>
-                <span className="font-semibold">{formatBRL(valorNum)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Comissão do ponto ({percentual}%)</span>
-                <span className="font-semibold text-accent-glow">{formatBRL(comissao)}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/20 pt-2 text-base">
-                <span className="font-medium">Líquido p/ empresa</span>
-                <span className="font-bold">{formatBRL(liquido)}</span>
-              </div>
-            </div>
-          )}
+           {maquinaSel && (
+             <div className="rounded-md bg-gradient-primary p-4 text-primary-foreground space-y-2">
+               <div className="flex justify-between text-xs opacity-90 border-b border-white/10 pb-1 mb-1">
+                 <span>Entrada no período: {entradaAtualNum} − {contadorEntradaAnterior} = {entradaPeriodo}</span>
+                 <span>Saída no período: {saidaAtualNum} − {contadorSaidaAnterior} = {saidaPeriodo}</span>
+               </div>
+               <div className="flex justify-between text-sm">
+                 <span>Valor faturado ({entradaPeriodo} × {formatBRL(vPorCreditoNum)})</span>
+                 <span className="font-semibold">{formatBRL(valorFaturadoNum)}</span>
+               </div>
+               <div className="flex justify-between text-sm">
+                 <span>Comissão do ponto ({percentual}%)</span>
+                 <span className="font-semibold text-accent-glow">{formatBRL(comissao)}</span>
+               </div>
+               <div className="flex justify-between border-t border-white/20 pt-2 text-base">
+                 <span className="font-medium">Líquido p/ empresa</span>
+                 <span className="font-bold">{formatBRL(liquido)}</span>
+               </div>
+             </div>
+           )}
         </Card>
 
         <Card className="p-5 space-y-3 bg-card">
