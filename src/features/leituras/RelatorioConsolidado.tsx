@@ -21,7 +21,8 @@ export default function RelatorioConsolidado() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const ids = searchParams.get("ids")?.split(",") || [];
+   const ids = searchParams.get("ids")?.split(",") || [];
+   const initialFormat = searchParams.get("format");
   const [loading, setLoading] = useState(true);
   const [leituras, setLeituras] = useState<any[]>([]);
   const [cliente, setCliente] = useState<any>(null);
@@ -49,10 +50,37 @@ export default function RelatorioConsolidado() {
           setCliente(data[0].clientes);
         }
       }
-      setLoading(false);
-    };
-    load();
-  }, [searchParams]);
+       setLoading(false);
+       
+       if (initialFormat && data && data.length > 0) {
+         const formatted = data.map(l => ({
+           id: l.id,
+           data_leitura: l.data_leitura,
+           maquina_codigo: l.maquinas?.codigo_identificacao || "—",
+           maquina_modelo: l.maquinas?.modelo,
+           contador_entrada_atual: l.contador_entrada_atual,
+           contador_saida_atual: l.contador_saida_atual,
+           contador_entrada_anterior: l.contador_entrada_anterior,
+           contador_saida_anterior: l.contador_saida_anterior,
+           valor_por_credito: l.valor_por_credito,
+           valor_faturado: Number(l.valor_faturado),
+           valor_comissao: Number(l.valor_comissao),
+           valor_liquido: Number(l.valor_liquido),
+           pelucias_saidas: Number(l.pelucias_saidas),
+         }));
+ 
+         const operator = user?.user_metadata?.full_name || user?.email || "Operador";
+         if (initialFormat === 'a4') {
+           await gerarPdfConsolidado(data[0].clientes.nome_ponto, data[0].data_leitura, operator, formatted);
+           await logAudit({ acao: "GENERATE_REPORT_A4", tabela: "leituras", registro_id: ids[0], dados_depois: { ids } });
+         } else if (initialFormat === 'thermal') {
+           await gerarPdfConsolidadoTermico(data[0].clientes.nome_ponto, data[0].data_leitura, operator, formatted);
+           await logAudit({ acao: "GENERATE_REPORT_THERMAL", tabela: "leituras", registro_id: ids[0], dados_depois: { ids } });
+         }
+       }
+     };
+     load();
+   }, [searchParams, user]);
 
    const getFormattedLeituras = (): ConsolidatedLeitura[] => {
      return leituras.map(l => ({
