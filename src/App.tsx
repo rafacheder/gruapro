@@ -7,8 +7,9 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import { AuthProvider } from "@/contexts/AuthContext";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import AppShell from "@/components/AppShell";
+ import ProtectedRoute from "@/components/ProtectedRoute";
+ import AppShell from "@/components/AppShell";
+ import SyncManager from "@/components/SyncManager";
 import ClientesList from "@/features/clientes/ClientesList";
 import ClienteForm from "@/features/clientes/ClienteForm";
 import ClienteDetalhe from "@/features/clientes/ClienteDetalhe";
@@ -29,13 +30,14 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
   </ProtectedRoute>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
+ const App = () => (
+   <QueryClientProvider client={queryClient}>
+     <TooltipProvider>
+       <SyncManager />
+       <Toaster />
+       <Sonner />
+       <BrowserRouter>
+         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<Shell><Dashboard /></Shell>} />
