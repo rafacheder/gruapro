@@ -53,7 +53,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
    const handleLogout = async () => {
      const pending = await db.pendingLeituras.count();
      if (pending > 0) {
-       const confirmLogout = confirm(
+       const confirmLogout = window.confirm(
          `Existem ${pending} leitura(s) aguardando sincronização. Se você sair agora, elas podem ser perdidas. Deseja sair mesmo assim?`
        );
        if (!confirmLogout) return;
@@ -81,16 +81,19 @@ export default function AppShell({ children }: { children: ReactNode }) {
         <div className="flex-1 px-3 py-4">
           <NavList />
         </div>
-        <div className="border-t border-border p-3 space-y-2">
-          <div className="px-3 py-2">
-            <div className="text-xs text-muted-foreground">Logado como</div>
-            <div className="text-sm font-medium truncate">{nome || "—"}</div>
-            <div className="text-xs text-accent capitalize">{role}</div>
-          </div>
-          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" /> Sair
-          </Button>
-        </div>
+         <div className="border-t border-border p-3 space-y-3">
+           <div className="px-3">
+             <SyncStatusBadge />
+           </div>
+           <div className="px-3 py-2 border-t border-border/50">
+             <div className="text-xs text-muted-foreground">Logado como</div>
+             <div className="text-sm font-medium truncate">{nome || "—"}</div>
+             <div className="text-xs text-accent capitalize">{role}</div>
+           </div>
+           <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
+             <LogOut className="h-4 w-4 mr-2" /> Sair
+           </Button>
+         </div>
       </aside>
 
       {/* Mobile header */}
