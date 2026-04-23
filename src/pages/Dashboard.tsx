@@ -40,12 +40,12 @@ interface Stats {
    const [loading, setLoading] = useState(true);
    const [loadingAlerts, setLoadingAlerts] = useState(false);
  
-   const periodDates = useMemo(() => {
-     const range = customRange?.from && customRange?.to 
-       ? { from: customRange.from, to: customRange.to } 
-       : undefined;
-     return getPeriodDates(periodType, range);
-   }, [periodType, customRange]);
+    const periodDates = useMemo(() => {
+      const range = customRange?.from 
+        ? { from: customRange.from, to: customRange.to as Date } 
+        : undefined;
+      return getPeriodDates(periodType, range);
+    }, [periodType, customRange]);
  
    useEffect(() => {
      const load = async () => {
