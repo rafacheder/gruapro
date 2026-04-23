@@ -212,29 +212,39 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
      return maquinas.filter(m => m.cliente_id === currentClienteId);
    }, [currentClienteId, maquinas]);
 
-  const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
-  const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
-  const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
-
-  useEffect(() => {
-    if (ultimaLeitura && valorNum >= 0) {
-      const currentData = {
-        valor_faturado: valorNum,
-        pelucias_saidas: parseInt(pelucias) || 0,
-        data_leitura: new Date().toISOString()
-      };
-      
-      const v = calcularVariacao(currentData, {
-        valor_faturado: Number(ultimaLeitura.valor_faturado),
-        pelucias_saidas: Number(ultimaLeitura.pelucias_saidas),
-        data_leitura: ultimaLeitura.data_leitura,
-        data_leitura_previa: ultimaLeitura.data_leitura_previa
-      });
-      setVariacao(v);
-    } else {
-      setVariacao(null);
-    }
-  }, [ultimaLeitura, valorNum, pelucias]);
+   const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
+ 
+   const contadorEntradaAnterior = ultimaLeitura?.contador_entrada_atual ?? 0;
+   const contadorSaidaAnterior = ultimaLeitura?.contador_saida_atual ?? 0;
+   const entradaAtualNum = parseInt(contadorEntradaAtual) || 0;
+   const saidaAtualNum = parseInt(contadorSaidaAtual) || 0;
+   const vPorCreditoNum = parseFloat(valorPorCredito.replace(",", ".")) || 1.00;
+ 
+   const entradaPeriodo = entradaAtualNum > 0 ? entradaAtualNum - contadorEntradaAnterior : 0;
+   const saidaPeriodo = saidaAtualNum > 0 ? saidaAtualNum - contadorSaidaAnterior : 0;
+   const valorFaturadoNum = entradaPeriodo > 0 ? entradaPeriodo * vPorCreditoNum : 0;
+ 
+   const { comissao, liquido } = useMemo(() => calcComissao(valorFaturadoNum, percentual), [valorFaturadoNum, percentual]);
+ 
+   useEffect(() => {
+     if (ultimaLeitura && entradaAtualNum > 0) {
+       const currentData = {
+         valor_faturado: valorFaturadoNum,
+         pelucias_saidas: saidaPeriodo,
+         data_leitura: new Date().toISOString()
+       };
+       
+       const v = calcularVariacao(currentData, {
+         valor_faturado: Number(ultimaLeitura.valor_faturado) || 0,
+         pelucias_saidas: Number(ultimaLeitura.pelucias_saidas) || 0,
+         data_leitura: ultimaLeitura.data_leitura || new Date().toISOString(),
+         data_leitura_previa: ultimaLeitura.data_leitura_previa
+       });
+       setVariacao(v);
+     } else {
+       setVariacao(null);
+     }
+   }, [ultimaLeitura, valorFaturadoNum, saidaPeriodo, entradaAtualNum]);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
@@ -252,10 +262,10 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     setPreviews((p) => p.filter((_, idx) => idx !== i));
   };
 
-    const resetForm = () => {
-      setMaquinaId("");
-      setValorFaturado("");
-      setPelucias("");
+     const resetForm = () => {
+       setMaquinaId("");
+       setContadorEntradaAtual("");
+       setContadorSaidaAtual("");
       setObservacoes("");
       setFotos([]);
       setPreviews([]);
@@ -266,7 +276,18 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     const handleSubmit = async (e?: React.FormEvent, proxima: boolean = false) => {
       if (e && (e as any).preventDefault) (e as any).preventDefault();
       if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
-      if (valorNum < 0) { toast.error("Valor inválido"); return; }
+       if (entradaAtualNum < contadorEntradaAnterior && entradaAtualNum > 0) {
+         toast.error("O contador de entrada digitado é menor que o anterior. Máquina foi resetada? Fale com o admin.");
+         return;
+       }
+       if (saidaAtualNum < contadorSaidaAnterior && saidaAtualNum > 0) {
+         toast.error("O contador de saída digitado é menor que o anterior.");
+         return;
+       }
+       if (entradaAtualNum <= 0 || saidaAtualNum <= 0) {
+         toast.error("Digite os contadores atuais");
+         return;
+       }
       if (!user) { toast.error("Sessão expirada"); return; }
 
       if (variacao?.nivelAlerta === 'critico' && !showConfirm) {
@@ -284,8 +305,13 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
              maquina_id: maquinaSel.id,
              cliente_id: maquinaSel.cliente_id,
              usuario_id: user.id,
-             valor_faturado: valorNum,
-             pelucias_saidas: parseInt(pelucias) || 0,
+              valor_faturado: valorFaturadoNum,
+              pelucias_saidas: saidaPeriodo,
+              contador_entrada_atual: entradaAtualNum,
+              contador_saida_atual: saidaAtualNum,
+              contador_entrada_anterior: contadorEntradaAnterior,
+              contador_saida_anterior: contadorSaidaAnterior,
+              valor_por_credito: vPorCreditoNum,
              valor_comissao: comissao,
              valor_liquido: liquido,
              percentual_aplicado: percentual,
@@ -314,7 +340,7 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            acao: "CREATE_LEITURA",
            tabela: "leituras",
            registro_id: leitura.id,
-           dados_depois: { valor_faturado: valorNum, comissao, percentual },
+            dados_depois: { valor_faturado: valorFaturadoNum, comissao, percentual, entrada_periodo: entradaPeriodo, saida_periodo: saidaPeriodo },
          });
  
           toast.success(`Leitura de ${maquinaSel.codigo_identificacao} registrada!`);
@@ -341,8 +367,13 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            maquina_id: maquinaSel.id,
            cliente_id: maquinaSel.cliente_id,
            usuario_id: user.id,
-           valor_faturado: valorNum,
-           pelucias_saidas: parseInt(pelucias) || 0,
+            valor_faturado: valorFaturadoNum,
+            pelucias_saidas: saidaPeriodo,
+            contador_entrada_atual: entradaAtualNum,
+            contador_saida_atual: saidaAtualNum,
+            contador_entrada_anterior: contadorEntradaAnterior,
+            contador_saida_anterior: contadorSaidaAnterior,
+            valor_por_credito: vPorCreditoNum,
            valor_comissao: comissao,
            valor_liquido: liquido,
            percentual_comissao: percentual,
