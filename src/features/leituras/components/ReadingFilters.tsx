@@ -109,8 +109,8 @@
    const isFilterActive = filters.clienteId || filters.maquinaId || filters.status !== "all" || filters.startDate || filters.endDate || filters.operadorId;
  
    const FilterForm = ({ className }: { className?: string }) => (
-    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4", className)}>
-        <div className="space-y-1.5">
+    <div className={cn("grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4", className)}>
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-2">
          <label className="text-xs font-medium">Cliente</label>
          <Combobox
            options={clientes}
@@ -120,7 +120,7 @@
          />
        </div>
  
-        <div className="space-y-1.5 lg:col-span-2">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
          <label className="text-xs font-medium">Máquina</label>
          <Combobox
            options={maquinas}
@@ -130,7 +130,7 @@
          />
        </div>
  
-       <div className="space-y-1.5">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
          <label className="text-xs font-medium">Status</label>
          <Select value={filters.status} onValueChange={(v) => handleFilterChange("status", v)}>
            <SelectTrigger>
@@ -145,7 +145,7 @@
          </Select>
        </div>
  
-       <div className="space-y-1.5">
+        <div className="space-y-1.5 md:col-span-2 lg:col-span-2">
          <label className="text-xs font-medium">Período</label>
          <div className="flex gap-2">
            <Popover>
@@ -174,7 +174,7 @@
        </div>
  
        {isAdmin && (
-         <div className="space-y-1.5">
+          <div className="space-y-1.5 md:col-span-2 lg:col-span-1">
            <label className="text-xs font-medium">Operador</label>
            <Select value={filters.operadorId} onValueChange={(v) => handleFilterChange("operadorId", v)}>
              <SelectTrigger>
