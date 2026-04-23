@@ -6,7 +6,9 @@ import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatNumber } from "@/lib/format";
-import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet } from "lucide-react";
+import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2 } from "lucide-react";
+import { calcularVariacao } from "@/utils/reading-calculations";
+import { formatDate } from "@/lib/format";
 
 interface Stats {
   faturamentoMes: number;
@@ -22,7 +24,9 @@ export default function Dashboard() {
   const { role, nome } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [alertas, setAlertas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAlerts, setLoadingAlerts] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -60,6 +64,37 @@ export default function Dashboard() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    if (role === 'usuario') return;
+
+    const loadAlerts = async () => {
+      setLoadingAlerts(true);
+      const { data } = await supabase
+        .from("vw_leituras_com_anterior")
+        .select("*, maquinas(codigo_identificacao), clientes(nome_ponto)")
+        .eq("rn_desc", 1);
+
+      if (data) {
+        const inAlert = data.map(l => {
+          if (!l.data_leitura_previa) return null;
+          const v = calcularVariacao(
+            { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+            { 
+              valor_faturado: Number(l.valor_faturado_previo), 
+              pelucias_saidas: l.pelucias_saidas_previa, 
+              data_leitura: l.data_leitura_previa,
+              data_leitura_previa: l.data_leitura_pre_previa
+            }
+          );
+          return v && v.nivelAlerta !== 'normal' ? { ...l, variacao: v } : null;
+        }).filter(Boolean);
+        setAlertas(inAlert as any[]);
+      }
+      setLoadingAlerts(false);
+    };
+    loadAlerts();
+  }, [role]);
 
   const showFinancials = canSeeFinancials(role);
   const firstName = (nome || "").split(" ")[0] || "Olá";
@@ -154,6 +189,58 @@ export default function Dashboard() {
           </Button>
         </div>
       </Card>
+
+      {role !== 'usuario' && (
+        <Card className="mt-6 overflow-hidden border-border">
+          <div className="bg-muted/50 p-4 border-b border-border flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              Máquinas em alerta
+            </h3>
+            {alertas.length > 0 && (
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
+                {alertas.length} {alertas.length === 1 ? 'máquina' : 'máquinas'}
+              </Badge>
+            )}
+          </div>
+          <div className="p-0">
+            {loadingAlerts ? (
+              <div className="p-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
+            ) : alertas.length === 0 ? (
+              <div className="p-8 text-center space-y-2">
+                <div className="flex justify-center"><CheckCircle2 className="h-10 w-10 text-success/40" /></div>
+                <p className="text-sm text-muted-foreground">✅ Nenhuma máquina em alerta no momento</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {alertas.map((l) => (
+                  <div 
+                    key={l.id} 
+                    className="p-4 hover:bg-muted/50 transition-colors cursor-pointer flex items-center justify-between group"
+                    onClick={() => navigate(`/leituras/${l.id}`)}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm">{l.maquinas?.codigo_identificacao}</span>
+                        <span className="text-xs text-muted-foreground">• {l.clientes?.nome_ponto}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`text-xs font-semibold ${l.variacao.nivelAlerta === 'critico' ? 'text-destructive' : 'text-warning'}`}>
+                          Queda de {Math.abs(Math.round(l.variacao.variacaoDiaria))}%
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Leitura em {formatDate(l.data_leitura)}
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
