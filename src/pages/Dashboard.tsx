@@ -35,10 +35,7 @@ interface Stats {
    const navigate = useNavigate();
    const [stats, setStats] = useState<Stats | null>(null);
    const [periodType, setPeriodType] = useState<PeriodType>("mes");
-   const [customRange, setCustomRange] = useState<DateRange | undefined>({
-     from: new Date(),
-     to: new Date()
-   });
+    const [customRange, setCustomRange] = useState<DateRange | undefined>();
    const [alertas, setAlertas] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [loadingAlerts, setLoadingAlerts] = useState(false);
