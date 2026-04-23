@@ -2,7 +2,10 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Users, Cpu, ClipboardList, Plus, LogOut, Shield, ScrollText, Menu } from "lucide-react";
+ import { LayoutDashboard, Users, Cpu, ClipboardList, Plus, LogOut, Shield, ScrollText, Menu, AlertTriangle } from "lucide-react";
+ import SyncStatusBadge from "./SyncStatusBadge";
+ import { db } from "@/lib/db";
+ import { toast } from "sonner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -47,10 +50,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
     </nav>
   );
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
+   const handleLogout = async () => {
+     const pending = await db.pendingLeituras.count();
+     if (pending > 0) {
+       const confirmLogout = confirm(
+         `Existem ${pending} leitura(s) aguardando sincronização. Se você sair agora, elas podem ser perdidas. Deseja sair mesmo assim?`
+       );
+       if (!confirmLogout) return;
+     }
+     await signOut();
+     navigate("/login");
+   };
+           <div className="flex items-center gap-2">
+             <SyncStatusBadge />
+             <Button size="icon" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" onClick={() => navigate("/leituras/nova")}>
+               <Plus className="h-5 w-5" />
+             </Button>
+           </div>
 
   return (
     <div className="min-h-screen bg-background flex">
