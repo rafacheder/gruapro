@@ -1,60 +1,22 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
-import { Plus, Search, Users, MapPin, Phone, Percent } from "lucide-react";
-import { Loader2 } from "lucide-react";
-
-interface Cliente {
-  id: string;
-  nome_ponto: string;
-  nome_responsavel: string;
-  telefone_responsavel: string;
-  cidade: string;
-  estado: string;
-  percentual_comissao: number;
-  ativo: boolean;
-}
+import { Plus, Search, Users, Loader2 } from "lucide-react";
+import { useClientes } from "./hooks/useClientes";
+import { ClienteCard } from "./components/ClienteCard";
 
 export default function ClientesList() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const { clientes, loading } = useClientes(search);
 
   const showFinancials = canSeeFinancials(role);
   const canEdit = canManageData(role);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const { data } = await supabase
-        .from("clientes")
-        .select("id, nome_ponto, nome_responsavel, telefone_responsavel, cidade, estado, percentual_comissao, ativo")
-        .order("nome_ponto");
-      setClientes(data || []);
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const filtered = clientes.filter((c) => {
-    const s = search.toLowerCase();
-    return (
-      !s ||
-      c.nome_ponto.toLowerCase().includes(s) ||
-      c.nome_responsavel.toLowerCase().includes(s) ||
-      c.cidade.toLowerCase().includes(s) ||
-      c.telefone_responsavel.includes(s)
-    );
-  });
 
   return (
     <div>
@@ -82,7 +44,7 @@ export default function ClientesList() {
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
-      ) : filtered.length === 0 ? (
+      ) : clientes.length === 0 ? (
         <EmptyState
           icon={Users}
           title={search ? "Nenhum cliente encontrado" : "Nenhum cliente cadastrado"}
@@ -97,29 +59,8 @@ export default function ClientesList() {
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {filtered.map((c) => (
-            <Card
-              key={c.id}
-              className="p-4 cursor-pointer hover:border-accent transition-colors bg-card"
-              onClick={() => navigate(`/clientes/${c.id}`)}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground truncate">{c.nome_ponto}</h3>
-                  <p className="text-sm text-muted-foreground truncate">{c.nome_responsavel}</p>
-                </div>
-                {!c.ativo && <Badge variant="secondary">Inativo</Badge>}
-              </div>
-              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2"><MapPin className="h-3 w-3" /> {c.cidade}/{c.estado}</div>
-                <div className="flex items-center gap-2"><Phone className="h-3 w-3" /> {c.telefone_responsavel}</div>
-                {showFinancials && (
-                  <div className="flex items-center gap-2 text-accent">
-                    <Percent className="h-3 w-3" /> Comissão: {c.percentual_comissao}%
-                  </div>
-                )}
-              </div>
-            </Card>
+          {clientes.map((c) => (
+            <ClienteCard key={c.id} cliente={c} showFinancials={showFinancials} />
           ))}
         </div>
       )}
