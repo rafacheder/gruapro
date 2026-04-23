@@ -6,7 +6,7 @@ import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatNumber } from "@/lib/format";
- import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2, Loader2, Calendar as CalendarIcon } from "lucide-react";
+ import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2, Loader2, Calendar as CalendarIcon, Package } from "lucide-react";
  import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
  import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
  import { Calendar } from "@/components/ui/calendar";
@@ -28,6 +28,7 @@ interface Stats {
   maquinasAtivas: number;
   leiturasMes: number;
   minhasLeiturasHoje: number;
+   totalPelucias: number;
 }
 
  export default function Dashboard() {
@@ -81,7 +82,7 @@ interface Stats {
        const [periodoLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
          supabase
            .from("leituras")
-           .select("valor_faturado, valor_comissao, valor_liquido, status")
+           .select("valor_faturado, valor_comissao, valor_liquido, status, pelucias_saidas")
            .gte("data_leitura", start.toISOString())
            .lte("data_leitura", end.toISOString()),
          supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
@@ -102,6 +103,7 @@ interface Stats {
          maquinasAtivas: maquinasAtivas.count || 0,
          leiturasMes: rows.length,
          minhasLeiturasHoje: minhasHoje.count || 0,
+         totalPelucias: rows.reduce((s, r) => s + (r.pelucias_saidas || 0), 0),
        });
        setLoading(false);
      };
@@ -243,6 +245,11 @@ interface Stats {
               value={loading ? "—" : formatNumber(stats?.leiturasMes || 0)}
               icon={ClipboardList}
             />
+           <StatCard
+             title="Pelúcias Saídas"
+             value={loading ? "—" : formatNumber(stats?.totalPelucias || 0)}
+             icon={Package}
+           />
           </>
         )}
         {!showFinancials && (
