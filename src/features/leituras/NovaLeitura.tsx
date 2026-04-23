@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff, Info, TrendingDown } from "lucide-react";
+ import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff, Info, TrendingDown, CheckCircle2 } from "lucide-react";
  import { Html5QrcodeScanner } from "html5-qrcode";
 import { calcComissao, formatBRL } from "@/lib/format";
 import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
@@ -71,6 +71,9 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
   const [ultimaLeitura, setUltimaLeitura] = useState<any | null>(null);
   const [variacao, setVariacao] = useState<VariacaoLeitura | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentClienteId, setCurrentClienteId] = useState<string | null>(null);
+  const [leiturasRealizadas, setLeiturasRealizadas] = useState<string[]>([]);
+  const [isSubmitNext, setIsSubmitNext] = useState(false);
 
    useEffect(() => {
      let timer: any;
@@ -127,7 +130,11 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
        return;
      }
  
-     setMaquinaId(id);
+     const maquina = maquinas.find(m => m.id === id);
+     if (maquina) {
+       setMaquinaId(id);
+       setCurrentClienteId(maquina.cliente_id);
+     }
      setIsScanning(false);
      toast.success("Máquina selecionada via QR Code!");
    };
@@ -176,7 +183,19 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
       });
   }, [maquinaId]);
 
-  const maquinaSel = maquinas.find((m) => m.id === maquinaId);
+   const maquinaSel = useMemo(() => maquinas.find((m) => m.id === maquinaId), [maquinas, maquinaId]);
+
+   useEffect(() => {
+     if (maquinaSel) {
+       setCurrentClienteId(maquinaSel.cliente_id);
+     }
+   }, [maquinaSel]);
+
+   const maquinasDoCliente = useMemo(() => {
+     if (!currentClienteId) return [];
+     return maquinas.filter(m => m.cliente_id === currentClienteId);
+   }, [currentClienteId, maquinas]);
+
   const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
   const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
   const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
@@ -217,17 +236,29 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     setPreviews((p) => p.filter((_, idx) => idx !== i));
   };
 
-   const handleSubmit = async (e?: React.FormEvent) => {
-     if (e) e.preventDefault();
-     if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
-     if (valorNum < 0) { toast.error("Valor inválido"); return; }
-     if (!user) { toast.error("Sessão expirada"); return; }
+    const resetForm = () => {
+      setMaquinaId("");
+      setValorFaturado("");
+      setPelucias("");
+      setObservacoes("");
+      setFotos([]);
+      setPreviews([]);
+      setUltimaLeitura(null);
+      setVariacao(null);
+    };
 
-     if (variacao?.nivelAlerta === 'critico' && !showConfirm) {
-       setShowConfirm(true);
-       return;
-     }
- 
+    const handleSubmit = async (e?: React.FormEvent, proxima: boolean = false) => {
+      if (e && (e as any).preventDefault) (e as any).preventDefault();
+      if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
+      if (valorNum < 0) { toast.error("Valor inválido"); return; }
+      if (!user) { toast.error("Sessão expirada"); return; }
+
+      if (variacao?.nivelAlerta === 'critico' && !showConfirm) {
+        setIsSubmitNext(proxima);
+        setShowConfirm(true);
+        return;
+      }
+
      setSaving(true);
      try {
        if (isOnline) {
@@ -270,8 +301,14 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            dados_depois: { valor_faturado: valorNum, comissao, percentual },
          });
  
-         toast.success("Leitura registrada!");
-         navigate(`/leituras/${leitura.id}`);
+          toast.success(`Leitura de ${maquinaSel.codigo_identificacao} registrada!`);
+          setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
+          
+          if (proxima) {
+            resetForm();
+          } else {
+            navigate(`/leituras/${leitura.id}`);
+          }
        } else {
          // Modo offline
          const fotosData = [];
@@ -299,8 +336,14 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            leitura_atual: 0, // Not used in insert but present in PendingLeitura
          }, fotosData);
  
-         toast.success("Leitura salva offline! Será sincronizada quando houver conexão.");
-         navigate("/leituras");
+          toast.success(`Leitura de ${maquinaSel.codigo_identificacao} salva offline!`);
+          setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
+          
+          if (proxima) {
+            resetForm();
+          } else {
+            navigate("/leituras");
+          }
        }
      } catch (err: unknown) {
        toast.error(err instanceof Error ? err.message : "Erro ao salvar");
@@ -358,7 +401,41 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
                </div>
              )}
  
-             <Select value={maquinaId} onValueChange={setMaquinaId}>
+              <Select value={maquinaId} onValueChange={(val) => {
+                setMaquinaId(val);
+                const m = maquinas.find(x => x.id === val);
+                if (m) setCurrentClienteId(m.cliente_id);
+              }}>
+
+              {maquinasDoCliente.length > 1 && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Label className="text-xs uppercase text-muted-foreground mb-2 block">
+                    Máquinas deste cliente ({leiturasRealizadas.filter(id => maquinasDoCliente.some(m => m.id === id)).length}/{maquinasDoCliente.length})
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {maquinasDoCliente.map(m => {
+                      const jaLida = leiturasRealizadas.includes(m.id);
+                      const isSelected = maquinaId === m.id;
+                      return (
+                        <Button
+                          key={m.id}
+                          type="button"
+                          variant={isSelected ? "default" : "outline"}
+                          size="sm"
+                          className={`h-auto py-1 px-3 text-xs ${jaLida && !isSelected ? 'opacity-60 grayscale border-green-200 bg-green-50 text-green-700' : ''}`}
+                          onClick={() => {
+                            setMaquinaId(m.id);
+                            if (jaLida) toast.info("Esta máquina já foi registrada nesta sessão.");
+                          }}
+                        >
+                          {jaLida && <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />}
+                          {m.codigo_identificacao}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <SelectTrigger><SelectValue placeholder="Selecione a máquina..." /></SelectTrigger>
               <SelectContent>
                 {maquinas.map((m) => (
@@ -479,16 +556,28 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
           </div>
         </Card>
 
-        <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="flex-1">Cancelar</Button>
-          <Button
-            type="submit"
-            disabled={saving || !maquinaId}
-            className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent"
-          >
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Registrar leitura
-          </Button>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              disabled={saving || !maquinaId}
+              onClick={() => handleSubmit(undefined, true)}
+            >
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar e Próxima
+            </Button>
+            <Button
+              type="submit"
+              disabled={saving || !maquinaId}
+              className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent"
+            >
+              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Salvar e Finalizar
+            </Button>
+          </div>
+          <Button type="button" variant="ghost" onClick={() => navigate(-1)} className="w-full">Cancelar</Button>
         </div>
       </form>
 
@@ -505,7 +594,7 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
             <AlertDialogCancel>Revisar valores</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setShowConfirm(false);
-              handleSubmit();
+              handleSubmit(undefined, isSubmitNext);
             }}>
               Confirmar e salvar
             </AlertDialogAction>
