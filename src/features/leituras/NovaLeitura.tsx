@@ -11,7 +11,7 @@ import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff, Info, TrendingDown } from "lucide-react";
  import { Html5QrcodeScanner } from "html5-qrcode";
-import { calcComissao, formatBRL, formatCurrency } from "@/lib/format";
+import { calcComissao, formatBRL } from "@/lib/format";
 import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -176,6 +176,11 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
       });
   }, [maquinaId]);
 
+  const maquinaSel = maquinas.find((m) => m.id === maquinaId);
+  const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
+  const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
+  const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
+
   useEffect(() => {
     if (ultimaLeitura && valorNum >= 0) {
       const currentData = {
@@ -195,11 +200,6 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
       setVariacao(null);
     }
   }, [ultimaLeitura, valorNum, pelucias]);
-
-  const maquinaSel = maquinas.find((m) => m.id === maquinaId);
-  const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
-  const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
-  const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
