@@ -21,7 +21,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!loading && user) {
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+       const from = (location.state as { from?: string } | null)?.from || "/";
       navigate(from, { replace: true });
     }
   }, [user, loading, navigate, location.state]);

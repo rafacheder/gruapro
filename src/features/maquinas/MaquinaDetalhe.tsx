@@ -10,7 +10,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
-import { ArrowLeft, Pencil, Trash2, ClipboardList, Plus, Loader2 } from "lucide-react";
+ import { ArrowLeft, Pencil, Trash2, ClipboardList, Plus, Loader2, QrCode, Download } from "lucide-react";
+ import QRCode from "qrcode";
+ import { jsPDF } from "jspdf";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -27,6 +29,7 @@ export default function MaquinaDetalhe() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leituras, setLeituras] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
   useEffect(() => {
     const load = async () => {
@@ -36,10 +39,52 @@ export default function MaquinaDetalhe() {
       ]);
       setMaquina(m);
       setLeituras(l || []);
+      
+      if (m) {
+        const url = `${window.location.origin}/leituras/nova?maquina_id=${m.id}`;
+        const dataUrl = await QRCode.toDataURL(url, { width: 400, margin: 2 });
+        setQrCodeDataUrl(dataUrl);
+      }
+      
       setLoading(false);
     };
     load();
   }, [id]);
+
+  const handleDownloadLabel = () => {
+    if (!maquina) return;
+    
+    // A6 size is 105 x 148 mm
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a6",
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    
+    // Ponto Name
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    const pontoName = maquina.clientes?.nome_ponto || "Ponto sem nome";
+    doc.text(pontoName, pageWidth / 2, 15, { align: "center" });
+
+    // QR Code (Center)
+    const qrSize = 70;
+    doc.addImage(qrCodeDataUrl, "PNG", (pageWidth - qrSize) / 2, 25, qrSize, qrSize);
+
+    // Machine Code
+    doc.setFontSize(18);
+    doc.text(maquina.codigo_identificacao, pageWidth / 2, 105, { align: "center" });
+    
+    // Instructions
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Acesse para registrar nova leitura", pageWidth / 2, 115, { align: "center" });
+
+    doc.save(`etiqueta-${maquina.codigo_identificacao}.pdf`);
+    toast.success("Etiqueta PDF gerada");
+  };
 
   const handleDelete = async () => {
     try {
@@ -66,6 +111,11 @@ export default function MaquinaDetalhe() {
         description={`${maquina.modelo || "Sem modelo"} • Status: ${maquina.status}`}
         action={
           <div className="flex gap-2">
+            {canEdit && (
+              <Button variant="outline" onClick={handleDownloadLabel} className="hidden sm:flex">
+                <Download className="h-4 w-4 mr-2" /> Etiqueta
+              </Button>
+            )}
             <Button onClick={() => navigate(`/leituras/nova?maquina=${id}`)} className="bg-accent text-accent-foreground hover:bg-accent/90">
               <Plus className="h-4 w-4 mr-2" /> Leitura
             </Button>
@@ -95,14 +145,34 @@ export default function MaquinaDetalhe() {
         }
       />
 
-      <Card className="p-5 bg-card mb-6">
-        <div className="text-sm text-muted-foreground">Cliente</div>
-        <Link to={`/clientes/${maquina.clientes?.id}`} className="text-lg font-semibold hover:text-accent">
-          {maquina.clientes?.nome_ponto}
-        </Link>
-        <div className="text-sm text-muted-foreground">{maquina.clientes?.cidade}</div>
-        {maquina.observacoes && <p className="text-sm text-muted-foreground mt-3">{maquina.observacoes}</p>}
-      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card className="p-5 bg-card md:col-span-2">
+          <div className="text-sm text-muted-foreground">Cliente</div>
+          <Link to={`/clientes/${maquina.clientes?.id}`} className="text-lg font-semibold hover:text-accent">
+            {maquina.clientes?.nome_ponto}
+          </Link>
+          <div className="text-sm text-muted-foreground">{maquina.clientes?.cidade}</div>
+          {maquina.observacoes && <p className="text-sm text-muted-foreground mt-3">{maquina.observacoes}</p>}
+        </Card>
+
+        <Card className="p-5 bg-card flex flex-col items-center justify-center text-center">
+          <div className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+            <QrCode className="h-3 w-3" /> QR Code da Máquina
+          </div>
+          {qrCodeDataUrl ? (
+            <div className="bg-white p-2 rounded-lg mb-3">
+              <img src={qrCodeDataUrl} alt="QR Code" className="h-32 w-32" />
+            </div>
+          ) : (
+            <div className="h-32 w-32 bg-muted animate-pulse rounded-lg mb-3" />
+          )}
+          {canEdit && (
+            <Button variant="outline" size="sm" onClick={handleDownloadLabel} className="w-full">
+              <Download className="h-3 w-3 mr-2" /> Baixar PDF
+            </Button>
+          )}
+        </Card>
+      </div>
 
       <h3 className="font-semibold mb-3">Histórico de leituras</h3>
       {leituras.length === 0 ? (
