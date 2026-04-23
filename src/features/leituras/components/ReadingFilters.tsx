@@ -145,8 +145,8 @@
          </Select>
        </div>
  
-        <div className="space-y-1.5 md:col-span-2 lg:col-span-2">
-         <label className="text-xs font-medium">Período</label>
+         <div className="space-y-1.5 md:col-span-2 lg:col-span-2">
+          <label className="text-xs font-medium">Período inicial e final</label>
          <div className="flex gap-2">
            <Popover>
              <PopoverTrigger asChild>
