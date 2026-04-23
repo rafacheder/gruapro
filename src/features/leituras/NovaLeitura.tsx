@@ -229,9 +229,10 @@ export default function NovaLeitura() {
            <div className="space-y-3">
              <div className="flex items-center justify-between">
                <Label>Máquina *</Label>
-               <Button 
-                 type="button" 
-                 variant={isScanning ? "destructive" : "accent"}
+               <Button
+                 type="button"
+                 variant={isScanning ? "destructive" : "default"}
+                 className={!isScanning ? "bg-accent text-accent-foreground hover:bg-accent/90" : ""}
                  size="sm"
                  onClick={() => setIsScanning(!isScanning)}
                >
