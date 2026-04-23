@@ -39,21 +39,44 @@ interface Stats {
    const [alertas, setAlertas] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [loadingAlerts, setLoadingAlerts] = useState(false);
+  const [referenceDate, setReferenceDate] = useState<Date | null>(null);
  
-    const periodDates = useMemo(() => {
-      const range = customRange?.from 
-        ? { from: customRange.from, to: customRange.to as Date } 
-        : undefined;
-      return getPeriodDates(periodType, range);
-    }, [periodType, customRange]);
+  const periodDates = useMemo(() => {
+    const range = customRange?.from
+      ? { from: customRange.from, to: (customRange.to ?? customRange.from) as Date }
+      : undefined;
+
+    return getPeriodDates(periodType, range, referenceDate ?? new Date());
+  }, [periodType, customRange, referenceDate]);
  
    useEffect(() => {
      const load = async () => {
        setLoading(true);
        const inicioHoje = new Date();
        inicioHoje.setHours(0, 0, 0, 0);
+
+      const { data: latestReading } = await supabase
+        .from("leituras")
+        .select("data_leitura")
+        .order("data_leitura", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const effectiveReferenceDate = latestReading?.data_leitura
+        ? new Date(latestReading.data_leitura)
+        : new Date();
+
+      if (!referenceDate || referenceDate.getTime() !== effectiveReferenceDate.getTime()) {
+        setReferenceDate(effectiveReferenceDate);
+      }
  
-       const { start, end } = periodDates;
+      const { start, end } = getPeriodDates(
+        periodType,
+        customRange?.from
+          ? { from: customRange.from, to: customRange.to ?? customRange.from }
+          : undefined,
+        effectiveReferenceDate,
+      );
  
        const [periodoLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
          supabase
