@@ -378,10 +378,8 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            valor_liquido: liquido,
            percentual_comissao: percentual,
            observacoes: observacoes || undefined,
-           data_leitura: new Date().toISOString(),
-           leitura_anterior: 0, // Not used in insert but present in PendingLeitura
-           leitura_atual: 0, // Not used in insert but present in PendingLeitura
-         }, fotosData);
+            data_leitura: new Date().toISOString(),
+          }, fotosData);
  
           toast.success(`Leitura de ${maquinaSel.codigo_identificacao} salva offline!`);
           setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
