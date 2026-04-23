@@ -223,6 +223,10 @@ export type Database = {
           aprovada_por: string | null
           assinatura_base64: string | null
           cliente_id: string
+          contador_entrada_anterior: number | null
+          contador_entrada_atual: number | null
+          contador_saida_anterior: number | null
+          contador_saida_atual: number | null
           created_at: string
           data_leitura: string
           id: string
@@ -237,11 +241,16 @@ export type Database = {
           valor_comissao: number
           valor_faturado: number
           valor_liquido: number
+          valor_por_credito: number | null
         }
         Insert: {
           aprovada_por?: string | null
           assinatura_base64?: string | null
           cliente_id: string
+          contador_entrada_anterior?: number | null
+          contador_entrada_atual?: number | null
+          contador_saida_anterior?: number | null
+          contador_saida_atual?: number | null
           created_at?: string
           data_leitura?: string
           id?: string
@@ -256,11 +265,16 @@ export type Database = {
           valor_comissao: number
           valor_faturado: number
           valor_liquido: number
+          valor_por_credito?: number | null
         }
         Update: {
           aprovada_por?: string | null
           assinatura_base64?: string | null
           cliente_id?: string
+          contador_entrada_anterior?: number | null
+          contador_entrada_atual?: number | null
+          contador_saida_anterior?: number | null
+          contador_saida_atual?: number | null
           created_at?: string
           data_leitura?: string
           id?: string
@@ -275,6 +289,7 @@ export type Database = {
           valor_comissao?: number
           valor_faturado?: number
           valor_liquido?: number
+          valor_por_credito?: number | null
         }
         Relationships: [
           {
@@ -390,6 +405,8 @@ export type Database = {
         Row: {
           cliente_id: string
           codigo_identificacao: string
+          contador_entrada_inicial: number | null
+          contador_saida_inicial: number | null
           created_at: string
           data_instalacao: string | null
           id: string
@@ -398,10 +415,13 @@ export type Database = {
           qr_code_url: string | null
           status: Database["public"]["Enums"]["maquina_status"]
           updated_at: string
+          valor_por_credito: number | null
         }
         Insert: {
           cliente_id: string
           codigo_identificacao: string
+          contador_entrada_inicial?: number | null
+          contador_saida_inicial?: number | null
           created_at?: string
           data_instalacao?: string | null
           id?: string
@@ -410,10 +430,13 @@ export type Database = {
           qr_code_url?: string | null
           status?: Database["public"]["Enums"]["maquina_status"]
           updated_at?: string
+          valor_por_credito?: number | null
         }
         Update: {
           cliente_id?: string
           codigo_identificacao?: string
+          contador_entrada_inicial?: number | null
+          contador_saida_inicial?: number | null
           created_at?: string
           data_instalacao?: string | null
           id?: string
@@ -422,6 +445,7 @@ export type Database = {
           qr_code_url?: string | null
           status?: Database["public"]["Enums"]["maquina_status"]
           updated_at?: string
+          valor_por_credito?: number | null
         }
         Relationships: [
           {
@@ -688,6 +712,12 @@ export type Database = {
           aprovada_por: string | null
           assinatura_base64: string | null
           cliente_id: string | null
+          contador_entrada_anterior: number | null
+          contador_entrada_anterior_val: number | null
+          contador_entrada_atual: number | null
+          contador_saida_anterior: number | null
+          contador_saida_anterior_val: number | null
+          contador_saida_atual: number | null
           created_at: string | null
           data_leitura: string | null
           data_leitura_pre_previa: string | null
@@ -708,6 +738,7 @@ export type Database = {
           valor_faturado: number | null
           valor_faturado_previo: number | null
           valor_liquido: number | null
+          valor_por_credito: number | null
         }
         Relationships: [
           {

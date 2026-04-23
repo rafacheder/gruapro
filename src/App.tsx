@@ -1,4 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+ import RelatorioConsolidado from "@/features/leituras/RelatorioConsolidado";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -57,7 +58,8 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
             <Route path="/maquinas/:id/editar" element={<Shell><MaquinaForm /></Shell>} />
             <Route path="/leituras" element={<Shell><LeiturasList /></Shell>} />
             <Route path="/leituras/nova" element={<Shell><NovaLeitura /></Shell>} />
-            <Route path="/leituras/:id" element={<Shell><LeituraDetalhe /></Shell>} />
+             <Route path="/leituras/:id" element={<Shell><LeituraDetalhe /></Shell>} />
+             <Route path="/leituras/consolidado" element={<Shell><RelatorioConsolidado /></Shell>} />
             <Route path="/usuarios" element={
               <ProtectedRoute requireRoles={["master", "admin"]}>
                 <AppShell><UsuariosList /></AppShell>

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
-import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2 } from "lucide-react";
+ import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2, FileText } from "lucide-react";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -78,9 +78,22 @@ export default function ClienteDetalhe() {
         action={
           canEdit && (
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => navigate(`/clientes/${id}/editar`)}>
-                <Pencil className="h-4 w-4 mr-1" /> Editar
-              </Button>
+               <Button variant="outline" size="sm" onClick={() => {
+                 const period = prompt("Digite o período (ex: 30 para últimos 30 dias, ou deixe em branco para todas as recentes):", "30");
+                 if (period === null) return;
+                 const limit = parseInt(period) || 100;
+                 const ids = leituras.slice(0, limit).map(l => l.id);
+                 if (ids.length === 0) {
+                   toast.error("Nenhuma leitura encontrada para este cliente.");
+                   return;
+                 }
+                 navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+               }}>
+                 <FileText className="h-4 w-4 mr-1" /> Relatório Consolidado
+               </Button>
+               <Button variant="secondary" size="sm" onClick={() => navigate(`/clientes/${id}/editar`)}>
+                 <Pencil className="h-4 w-4 mr-1" /> Editar
+               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" size="sm"><Trash2 className="h-4 w-4" /></Button>

@@ -1,3 +1,4 @@
+   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
-import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle } from "lucide-react";
+ import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, FileText } from "lucide-react";
+ import { toast } from "sonner";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
 import { calcularVariacao } from "@/utils/reading-calculations";
@@ -64,11 +66,33 @@ export default function LeiturasList() {
       <PageHeader
         title="Leituras"
         description="Histórico de coletas em campo"
-        action={
-          <Button onClick={() => navigate("/leituras/nova")} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
-            <Plus className="h-4 w-4 mr-2" /> Nova
-          </Button>
-        }
+         action={
+           <div className="flex gap-2">
+             {selectedIds.length > 0 && (
+               <Button 
+                 onClick={() => {
+                   const firstLeitura = items.find(i => i.id === selectedIds[0]);
+                   const sameCliente = selectedIds.every(id => {
+                     const l = items.find(i => i.id === id);
+                     return l?.cliente_id === firstLeitura?.cliente_id;
+                   });
+                   if (!sameCliente) {
+                     toast.error("Todas as leituras selecionadas devem ser do mesmo cliente.");
+                     return;
+                   }
+                   navigate(`/leituras/consolidado?ids=${selectedIds.join(",")}`);
+                 }} 
+                 variant="outline" 
+                 className="border-accent text-accent hover:bg-accent/10"
+               >
+                 <FileText className="h-4 w-4 mr-2" /> Relatório ({selectedIds.length})
+               </Button>
+             )}
+             <Button onClick={() => navigate("/leituras/nova")} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
+               <Plus className="h-4 w-4 mr-2" /> Nova
+             </Button>
+           </div>
+         }
       />
 
       <Tabs defaultValue="all" className="w-full" onValueChange={setStatusFilter}>
@@ -97,9 +121,19 @@ export default function LeiturasList() {
         />
       ) : (
         <div className="space-y-2">
-          {filteredItems.map((l) => (
-            <Link key={l.id} to={`/leituras/${l.id}`}>
-              <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3 relative overflow-hidden">
+           {filteredItems.map((l) => (
+             <div key={l.id} className="relative flex items-center gap-2">
+               <input 
+                 type="checkbox" 
+                 checked={selectedIds.includes(l.id)}
+                 onChange={(e) => {
+                   if (e.target.checked) setSelectedIds([...selectedIds, l.id]);
+                   else setSelectedIds(selectedIds.filter(id => id !== l.id));
+                 }}
+                 className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent ml-2"
+               />
+               <Link to={`/leituras/${l.id}`} className="flex-1 min-w-0">
+                 <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3 relative overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${
                   l.status === 'pago' ? 'bg-success' : 
                   l.status === 'pendente' ? 'bg-warning' : 
@@ -128,23 +162,24 @@ export default function LeiturasList() {
                     )}
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  {showFinancials && (
-                    <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
-                  )}
-                  <Badge 
-                    variant={l.status === "pago" ? "default" : "secondary"} 
-                    className={`mt-1 text-[10px] capitalize ${
-                      l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' : 
-                      l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' : 
-                      ''
-                    }`}
-                  >
-                    {l.status}
-                  </Badge>
-                </div>
-              </Card>
-            </Link>
+                 <div className="text-right shrink-0">
+                   {showFinancials && (
+                     <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
+                   )}
+                   <Badge 
+                     variant={l.status === "pago" ? "default" : "secondary"} 
+                     className={`mt-1 text-[10px] capitalize ${
+                       l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' : 
+                       l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' : 
+                       ''
+                     }`}
+                   >
+                     {l.status}
+                   </Badge>
+                 </div>
+               </Card>
+               </Link>
+             </div>
           ))}
         </div>
       )}

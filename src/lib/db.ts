@@ -5,8 +5,11 @@
    tempId: string; // Used to link with photos
    maquina_id: string;
    cliente_id: string;
-   leitura_anterior: number;
-   leitura_atual: number;
+    contador_entrada_atual: number;
+    contador_saida_atual: number;
+    contador_entrada_anterior: number;
+    contador_saida_anterior: number;
+    valor_por_credito: number;
    valor_faturado: number;
    valor_comissao: number;
    valor_liquido: number;

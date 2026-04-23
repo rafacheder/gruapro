@@ -1,3 +1,165 @@
+ export interface ConsolidatedLeitura {
+   id: string;
+   data_leitura: string;
+   maquina_codigo: string;
+   maquina_modelo?: string | null;
+   contador_entrada_atual?: number | null;
+   contador_saida_atual?: number | null;
+   contador_entrada_anterior?: number | null;
+   contador_saida_anterior?: number | null;
+   valor_por_credito?: number | null;
+   valor_faturado: number;
+   valor_comissao: number;
+   valor_liquido: number;
+   pelucias_saidas: number;
+ }
+ 
+ export async function gerarPdfConsolidado(
+   clienteNome: string,
+   data: string,
+   operadorNome: string,
+   leituras: ConsolidatedLeitura[]
+ ) {
+   const doc = new jsPDF();
+   const now = new Date();
+   const docId = `REL-${now.getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+ 
+   // Cabeçalho
+   doc.setFontSize(14);
+   doc.setFont("helvetica", "bold");
+   doc.text("Resumo detalhado", 14, 15);
+   
+   doc.setFontSize(10);
+   doc.setFont("helvetica", "normal");
+   doc.text("Informações do resumo:", 14, 25);
+   doc.text(`Cliente: ${clienteNome}`, 14, 30);
+   doc.text(`Data: ${formatDateTime(data).split(' ')[0]}`, 14, 35);
+   doc.text(`Operador: ${operadorNome}`, 14, 40);
+ 
+   const tableRows: any[] = [];
+   let totalEntrada = 0;
+   let totalSaida = 0;
+   let totalGeral = 0;
+   let totalComissoes = 0;
+   let totalSaldo = 0;
+ 
+   leituras.forEach((l, index) => {
+     const entradaDelta = (l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0);
+     const saidaDelta = (l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0);
+     
+     totalEntrada += entradaDelta;
+     totalSaida += saidaDelta;
+     totalGeral += l.valor_faturado;
+     totalComissoes += l.valor_comissao;
+     totalSaldo += l.valor_liquido;
+ 
+     // Linha 1: Equipamento
+     tableRows.push([
+       { content: `${index + 1}`, rowSpan: 3, styles: { valign: 'middle', halign: 'center' } },
+       { content: `${l.maquina_codigo}${l.maquina_modelo ? ` - ${l.maquina_modelo}` : ''}`, colSpan: 5, styles: { fontStyle: 'bold' } }
+     ]);
+ 
+     // Linha 2: Anterior / Atual
+     const hasCounters = l.contador_entrada_atual !== null && l.contador_entrada_atual !== undefined;
+     
+     tableRows.push([
+       "ANTERIOR",
+       hasCounters ? l.contador_entrada_anterior : "— sem contador —",
+       hasCounters ? l.contador_saida_anterior : "— sem contador —",
+       "", "", ""
+     ]);
+ 
+     tableRows.push([
+       "ATUAL",
+       hasCounters ? l.contador_entrada_atual : "— sem contador —",
+       hasCounters ? l.contador_saida_atual : "— sem contador —",
+       formatBRL(l.valor_faturado),
+       formatBRL(l.valor_comissao),
+       formatBRL(l.valor_liquido)
+     ]);
+ 
+     // Linha de deltas (opcional, vamos colocar os deltas na linha ATUAL ou numa 4ª se necessário, 
+     // mas o modelo sugere que os totais da máquina fiquem numa linha de "resultado")
+     // Vamos ajustar para bater com o modelo:
+     // N°  EQUIPAMENTO          ENTRADA   SAÍDA    TOTAL      COMISSÃO   RECEBER
+     // 1   MAQ-001
+     //     ANTERIOR             84758     49271
+     //     ATUAL                84943     49346
+     //                          185       75       R$ 110,00  R$ 55,00   R$ 55,00
+     
+     // Corrigindo para 4 linhas por máquina para ficar idêntico ao pedido
+     tableRows.pop(); 
+     tableRows.pop();
+     tableRows.pop();
+ 
+     tableRows.push([
+       { content: `${index + 1}`, rowSpan: 4, styles: { valign: 'middle', halign: 'center' } },
+       { content: `${l.maquina_codigo}${l.maquina_modelo ? ` - ${l.maquina_modelo}` : ''}`, colSpan: 5, styles: { fontStyle: 'bold', fillColor: [240, 240, 240] } }
+     ]);
+     tableRows.push(["ANTERIOR", hasCounters ? l.contador_entrada_anterior : "—", hasCounters ? l.contador_saida_anterior : "—", "", "", ""]);
+     tableRows.push(["ATUAL", hasCounters ? l.contador_entrada_atual : "—", hasCounters ? l.contador_saida_atual : "—", "", "", ""]);
+     tableRows.push([
+       { content: "", styles: { fillColor: [250, 250, 250] } }, 
+       { content: hasCounters ? entradaDelta : "—", styles: { fontStyle: 'bold' } },
+       { content: hasCounters ? saidaDelta : "—", styles: { fontStyle: 'bold' } },
+       { content: formatBRL(l.valor_faturado), styles: { fontStyle: 'bold' } },
+       { content: formatBRL(l.valor_comissao), styles: { fontStyle: 'bold' } },
+       { content: formatBRL(l.valor_liquido), styles: { fontStyle: 'bold' } }
+     ]);
+   });
+ 
+   autoTable(doc, {
+     startY: 50,
+     head: [["N°", "EQUIPAMENTO", "ENTRADA", "SAÍDA", "TOTAL", "COMISSÃO", "RECEBER"]],
+     body: tableRows,
+     theme: "grid",
+     headStyles: { fillColor: [15, 76, 92], textColor: 255 },
+     styles: { fontSize: 8 },
+     columnStyles: {
+       0: { cellWidth: 10 },
+       1: { cellWidth: 50 },
+     }
+   });
+ 
+   const finalY = (doc as any).lastAutoTable.finalY + 10;
+ 
+   // Rodapé de Totalizadores
+   doc.setFont("helvetica", "bold");
+   doc.text("ENTRADA TOTAL", 130, finalY);
+   doc.text(`${totalEntrada}`, 180, finalY, { align: 'right' });
+ 
+   doc.text("SAÍDA TOTAL", 130, finalY + 5);
+   doc.text(`${totalSaida}`, 180, finalY + 5, { align: 'right' });
+ 
+   doc.text("GERAL", 130, finalY + 10);
+   doc.text(formatBRL(totalGeral), 180, finalY + 10, { align: 'right' });
+ 
+   doc.text("SUBTOTAL", 130, finalY + 15);
+   doc.text(formatBRL(totalGeral), 180, finalY + 15, { align: 'right' });
+ 
+   doc.text("COMISSÕES", 130, finalY + 20);
+   doc.text(formatBRL(totalComissoes), 180, finalY + 20, { align: 'right' });
+ 
+   doc.setFontSize(11);
+   doc.text("SALDO", 130, finalY + 27);
+   doc.text(formatBRL(totalSaldo), 180, finalY + 27, { align: 'right' });
+ 
+   // Audit information
+   const pages = doc.getNumberOfPages();
+   for (let p = 1; p <= pages; p++) {
+     doc.setPage(p);
+     doc.setFontSize(7);
+     doc.setTextColor(120, 120, 120);
+     doc.text("INF. SISTEMA:", 14, 275);
+     doc.text(`Versão do sistema: 1.0.0`, 14, 280);
+     doc.text(`Gerado em ${formatDateTime(now)}`, 14, 283);
+     doc.text(`Documento: ${docId}`, 14, 286);
+     doc.text(`Gerado por: ${operadorNome}`, 14, 289);
+     doc.text(`Página ${p}/${pages}`, 180, 289);
+   }
+ 
+   doc.save(`${docId}.pdf`);
+ }
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { sha256Hex } from "./sha256";

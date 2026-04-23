@@ -62,8 +62,9 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
    const [maquinaId, setMaquinaId] = useState(maquinaIdParam || "");
    const [isScanning, setIsScanning] = useState(false);
    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const [valorFaturado, setValorFaturado] = useState("");
-  const [pelucias, setPelucias] = useState("");
+   const [contadorEntradaAtual, setContadorEntradaAtual] = useState("");
+   const [contadorSaidaAtual, setContadorSaidaAtual] = useState("");
+   const [valorPorCredito, setValorPorCredito] = useState("1,00");
   const [observacoes, setObservacoes] = useState("");
   const [fotos, setFotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -169,16 +170,33 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
       setUltimaLeitura(null);
       return;
     }
-    supabase
-      .from("vw_leituras_com_anterior")
-      .select("*")
-      .eq("maquina_id", maquinaId)
-      .order("data_leitura", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        setUltimaLeitura(data);
-      });
+     async function fetchLast() {
+       const { data: maquina } = await supabase.from("maquinas").select("valor_por_credito, contador_entrada_inicial, contador_saida_inicial").eq("id", maquinaId).maybeSingle();
+       if (maquina) {
+         setValorPorCredito(maquina.valor_por_credito?.toString().replace(".", ",") || "1,00");
+       }
+       
+       const { data } = await supabase
+         .from("vw_leituras_com_anterior")
+         .select("*")
+         .eq("maquina_id", maquinaId)
+         .order("data_leitura", { ascending: false })
+         .limit(1)
+         .maybeSingle();
+         
+       if (data) {
+         setUltimaLeitura(data);
+       } else if (maquina) {
+         // Se não tem leitura, usa os contadores iniciais da máquina como baseline
+         setUltimaLeitura({
+           contador_entrada_atual: maquina.contador_entrada_inicial || 0,
+           contador_saida_atual: maquina.contador_saida_inicial || 0,
+           data_leitura: null, // indica que é baseline
+           is_baseline: true
+         });
+       }
+     }
+     fetchLast();
   }, [maquinaId]);
 
    const maquinaSel = useMemo(() => maquinas.find((m) => m.id === maquinaId), [maquinas, maquinaId]);
@@ -194,29 +212,39 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
      return maquinas.filter(m => m.cliente_id === currentClienteId);
    }, [currentClienteId, maquinas]);
 
-  const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
-  const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
-  const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
-
-  useEffect(() => {
-    if (ultimaLeitura && valorNum >= 0) {
-      const currentData = {
-        valor_faturado: valorNum,
-        pelucias_saidas: parseInt(pelucias) || 0,
-        data_leitura: new Date().toISOString()
-      };
-      
-      const v = calcularVariacao(currentData, {
-        valor_faturado: Number(ultimaLeitura.valor_faturado),
-        pelucias_saidas: Number(ultimaLeitura.pelucias_saidas),
-        data_leitura: ultimaLeitura.data_leitura,
-        data_leitura_previa: ultimaLeitura.data_leitura_previa
-      });
-      setVariacao(v);
-    } else {
-      setVariacao(null);
-    }
-  }, [ultimaLeitura, valorNum, pelucias]);
+   const percentual = maquinaSel?.clientes?.percentual_comissao || 0;
+ 
+   const contadorEntradaAnterior = ultimaLeitura?.contador_entrada_atual ?? 0;
+   const contadorSaidaAnterior = ultimaLeitura?.contador_saida_atual ?? 0;
+   const entradaAtualNum = parseInt(contadorEntradaAtual) || 0;
+   const saidaAtualNum = parseInt(contadorSaidaAtual) || 0;
+   const vPorCreditoNum = parseFloat(valorPorCredito.replace(",", ".")) || 1.00;
+ 
+   const entradaPeriodo = entradaAtualNum > 0 ? entradaAtualNum - contadorEntradaAnterior : 0;
+   const saidaPeriodo = saidaAtualNum > 0 ? saidaAtualNum - contadorSaidaAnterior : 0;
+   const valorFaturadoNum = entradaPeriodo > 0 ? entradaPeriodo * vPorCreditoNum : 0;
+ 
+   const { comissao, liquido } = useMemo(() => calcComissao(valorFaturadoNum, percentual), [valorFaturadoNum, percentual]);
+ 
+   useEffect(() => {
+     if (ultimaLeitura && entradaAtualNum > 0) {
+       const currentData = {
+         valor_faturado: valorFaturadoNum,
+         pelucias_saidas: saidaPeriodo,
+         data_leitura: new Date().toISOString()
+       };
+       
+       const v = calcularVariacao(currentData, {
+         valor_faturado: Number(ultimaLeitura.valor_faturado) || 0,
+         pelucias_saidas: Number(ultimaLeitura.pelucias_saidas) || 0,
+         data_leitura: ultimaLeitura.data_leitura || new Date().toISOString(),
+         data_leitura_previa: ultimaLeitura.data_leitura_previa
+       });
+       setVariacao(v);
+     } else {
+       setVariacao(null);
+     }
+   }, [ultimaLeitura, valorFaturadoNum, saidaPeriodo, entradaAtualNum]);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
@@ -234,10 +262,10 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     setPreviews((p) => p.filter((_, idx) => idx !== i));
   };
 
-    const resetForm = () => {
-      setMaquinaId("");
-      setValorFaturado("");
-      setPelucias("");
+     const resetForm = () => {
+       setMaquinaId("");
+       setContadorEntradaAtual("");
+       setContadorSaidaAtual("");
       setObservacoes("");
       setFotos([]);
       setPreviews([]);
@@ -248,7 +276,18 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     const handleSubmit = async (e?: React.FormEvent, proxima: boolean = false) => {
       if (e && (e as any).preventDefault) (e as any).preventDefault();
       if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
-      if (valorNum < 0) { toast.error("Valor inválido"); return; }
+       if (entradaAtualNum < contadorEntradaAnterior && entradaAtualNum > 0) {
+         toast.error("O contador de entrada digitado é menor que o anterior. Máquina foi resetada? Fale com o admin.");
+         return;
+       }
+       if (saidaAtualNum < contadorSaidaAnterior && saidaAtualNum > 0) {
+         toast.error("O contador de saída digitado é menor que o anterior.");
+         return;
+       }
+       if (entradaAtualNum <= 0 || saidaAtualNum <= 0) {
+         toast.error("Digite os contadores atuais");
+         return;
+       }
       if (!user) { toast.error("Sessão expirada"); return; }
 
       if (variacao?.nivelAlerta === 'critico' && !showConfirm) {
@@ -266,8 +305,13 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
              maquina_id: maquinaSel.id,
              cliente_id: maquinaSel.cliente_id,
              usuario_id: user.id,
-             valor_faturado: valorNum,
-             pelucias_saidas: parseInt(pelucias) || 0,
+              valor_faturado: valorFaturadoNum,
+              pelucias_saidas: saidaPeriodo,
+              contador_entrada_atual: entradaAtualNum,
+              contador_saida_atual: saidaAtualNum,
+              contador_entrada_anterior: contadorEntradaAnterior,
+              contador_saida_anterior: contadorSaidaAnterior,
+              valor_por_credito: vPorCreditoNum,
              valor_comissao: comissao,
              valor_liquido: liquido,
              percentual_aplicado: percentual,
@@ -296,16 +340,26 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            acao: "CREATE_LEITURA",
            tabela: "leituras",
            registro_id: leitura.id,
-           dados_depois: { valor_faturado: valorNum, comissao, percentual },
+            dados_depois: { valor_faturado: valorFaturadoNum, comissao, percentual, entrada_periodo: entradaPeriodo, saida_periodo: saidaPeriodo },
          });
  
           toast.success(`Leitura de ${maquinaSel.codigo_identificacao} registrada!`);
           setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
           
+          const sessionIds = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
+          sessionIds.push(leitura.id);
+          sessionStorage.setItem("session_leituras", JSON.stringify(sessionIds));
+
           if (proxima) {
             resetForm();
           } else {
-            navigate(`/leituras/${leitura.id}`);
+            const ids = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
+            sessionStorage.removeItem("session_leituras");
+            if (ids.length > 1) {
+              navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+            } else {
+              navigate(`/leituras/${leitura.id}`);
+            }
           }
        } else {
          // Modo offline
@@ -323,16 +377,19 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
            maquina_id: maquinaSel.id,
            cliente_id: maquinaSel.cliente_id,
            usuario_id: user.id,
-           valor_faturado: valorNum,
-           pelucias_saidas: parseInt(pelucias) || 0,
+            valor_faturado: valorFaturadoNum,
+            pelucias_saidas: saidaPeriodo,
+            contador_entrada_atual: entradaAtualNum,
+            contador_saida_atual: saidaAtualNum,
+            contador_entrada_anterior: contadorEntradaAnterior,
+            contador_saida_anterior: contadorSaidaAnterior,
+            valor_por_credito: vPorCreditoNum,
            valor_comissao: comissao,
            valor_liquido: liquido,
            percentual_comissao: percentual,
            observacoes: observacoes || undefined,
-           data_leitura: new Date().toISOString(),
-           leitura_anterior: 0, // Not used in insert but present in PendingLeitura
-           leitura_atual: 0, // Not used in insert but present in PendingLeitura
-         }, fotosData);
+            data_leitura: new Date().toISOString(),
+          }, fotosData);
  
           toast.success(`Leitura de ${maquinaSel.codigo_identificacao} salva offline!`);
           setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
@@ -369,9 +426,11 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
              📊 Última leitura: {format(parseISO(ultimaLeitura.data_leitura), "dd/MM/yyyy")} (há {diasUltimaLeitura} dias)
            </div>
             <div className="text-xs text-muted-foreground grid grid-cols-3 gap-2">
-             <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
-             <div>Pelúcias: <span className="font-semibold">{ultimaLeitura.pelucias_saidas}</span></div>
-             <div>{formatBRL(faturamentoDiaAnterior)}/dia</div>
+              <div>Entrada: <span className="font-semibold">{ultimaLeitura.contador_entrada_atual || 0}</span></div>
+              <div>Saída: <span className="font-semibold">{ultimaLeitura.contador_saida_atual || 0}</span></div>
+              {ultimaLeitura.valor_faturado !== undefined && (
+                <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
+              )}
            </div>
          </Card>
        )}
@@ -446,30 +505,40 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
           </div>
         </Card>
 
-        <Card className="p-5 space-y-4 bg-card">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Valor faturado (R$) *</Label>
-              <Input
-                type="text"
-                inputMode="decimal"
-                value={valorFaturado}
-                onChange={(e) => setValorFaturado(e.target.value.replace(/[^\d.,]/g, ""))}
-                placeholder="0,00"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Pelúcias saídas</Label>
-              <Input
-                type="number"
-                min="0"
-                value={pelucias}
-                onChange={(e) => setPelucias(e.target.value)}
-                placeholder="0"
-              />
-            </div>
-          </div>
+         <Card className="p-5 space-y-4 bg-card">
+           <div className="grid grid-cols-2 gap-4">
+             <div className="space-y-2">
+               <Label>Entrada atual *</Label>
+               <Input
+                 type="number"
+                 inputMode="numeric"
+                 value={contadorEntradaAtual}
+                 onChange={(e) => setContadorEntradaAtual(e.target.value)}
+                 placeholder={contadorEntradaAnterior.toString()}
+                 required
+               />
+             </div>
+             <div className="space-y-2">
+               <Label>Saída atual *</Label>
+               <Input
+                 type="number"
+                 inputMode="numeric"
+                 value={contadorSaidaAtual}
+                 onChange={(e) => setContadorSaidaAtual(e.target.value)}
+                 placeholder={contadorSaidaAnterior.toString()}
+                 required
+               />
+             </div>
+             <div className="space-y-2 col-span-2">
+               <Label>Valor por crédito (R$)</Label>
+               <Input
+                 type="text"
+                 inputMode="decimal"
+                 value={valorPorCredito}
+                 onChange={(e) => setValorPorCredito(e.target.value.replace(/[^\d.,]/g, ""))}
+               />
+             </div>
+           </div>
 
           {variacao && variacao.nivelAlerta !== 'normal' && (
             <div className={`flex items-start gap-2 p-3 rounded-md border ${
@@ -489,22 +558,26 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
             </div>
           )}
 
-          {maquinaSel && (
-            <div className="rounded-md bg-gradient-primary p-4 text-primary-foreground space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Faturamento</span>
-                <span className="font-semibold">{formatBRL(valorNum)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>Comissão do ponto ({percentual}%)</span>
-                <span className="font-semibold text-accent-glow">{formatBRL(comissao)}</span>
-              </div>
-              <div className="flex justify-between border-t border-white/20 pt-2 text-base">
-                <span className="font-medium">Líquido p/ empresa</span>
-                <span className="font-bold">{formatBRL(liquido)}</span>
-              </div>
-            </div>
-          )}
+           {maquinaSel && (
+             <div className="rounded-md bg-gradient-primary p-4 text-primary-foreground space-y-2">
+               <div className="flex justify-between text-xs opacity-90 border-b border-white/10 pb-1 mb-1">
+                 <span>Entrada no período: {entradaAtualNum} − {contadorEntradaAnterior} = {entradaPeriodo}</span>
+                 <span>Saída no período: {saidaAtualNum} − {contadorSaidaAnterior} = {saidaPeriodo}</span>
+               </div>
+               <div className="flex justify-between text-sm">
+                 <span>Valor faturado ({entradaPeriodo} × {formatBRL(vPorCreditoNum)})</span>
+                 <span className="font-semibold">{formatBRL(valorFaturadoNum)}</span>
+               </div>
+               <div className="flex justify-between text-sm">
+                 <span>Comissão do ponto ({percentual}%)</span>
+                 <span className="font-semibold text-accent-glow">{formatBRL(comissao)}</span>
+               </div>
+               <div className="flex justify-between border-t border-white/20 pt-2 text-base">
+                 <span className="font-medium">Líquido p/ empresa</span>
+                 <span className="font-bold">{formatBRL(liquido)}</span>
+               </div>
+             </div>
+           )}
         </Card>
 
         <Card className="p-5 space-y-3 bg-card">
