@@ -14,16 +14,601 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_antes: Json | null
+          dados_depois: Json | null
+          id: string
+          ip_address: string | null
+          registro_id: string | null
+          tabela: string
+          usuario_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela: string
+          usuario_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_antes?: Json | null
+          dados_depois?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela?: string
+          usuario_id?: string | null
+        }
+        Relationships: []
+      }
+      clientes: {
+        Row: {
+          ativo: boolean
+          bairro: string
+          cep: string
+          cidade: string
+          complemento: string | null
+          created_at: string
+          created_by: string | null
+          data_inicio_contrato: string | null
+          email: string | null
+          estado: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          nome_ponto: string
+          nome_responsavel: string
+          numero: string
+          observacoes: string | null
+          percentual_comissao: number
+          rua: string
+          telefone_responsavel: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          bairro: string
+          cep: string
+          cidade: string
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_inicio_contrato?: string | null
+          email?: string | null
+          estado: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome_ponto: string
+          nome_responsavel: string
+          numero: string
+          observacoes?: string | null
+          percentual_comissao: number
+          rua: string
+          telefone_responsavel: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          bairro?: string
+          cep?: string
+          cidade?: string
+          complemento?: string | null
+          created_at?: string
+          created_by?: string | null
+          data_inicio_contrato?: string | null
+          email?: string | null
+          estado?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          nome_ponto?: string
+          nome_responsavel?: string
+          numero?: string
+          observacoes?: string | null
+          percentual_comissao?: number
+          rua?: string
+          telefone_responsavel?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leitura_fotos: {
+        Row: {
+          created_at: string
+          foto_url: string
+          id: string
+          leitura_id: string
+          ordem: number
+        }
+        Insert: {
+          created_at?: string
+          foto_url: string
+          id?: string
+          leitura_id: string
+          ordem: number
+        }
+        Update: {
+          created_at?: string
+          foto_url?: string
+          id?: string
+          leitura_id?: string
+          ordem?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leitura_fotos_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: false
+            referencedRelation: "leituras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leitura_pelucias_detalhe: {
+        Row: {
+          id: string
+          leitura_id: string
+          pelucia_tipo_id: string
+          quantidade: number
+        }
+        Insert: {
+          id?: string
+          leitura_id: string
+          pelucia_tipo_id: string
+          quantidade: number
+        }
+        Update: {
+          id?: string
+          leitura_id?: string
+          pelucia_tipo_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leitura_pelucias_detalhe_leitura_id_fkey"
+            columns: ["leitura_id"]
+            isOneToOne: false
+            referencedRelation: "leituras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leitura_pelucias_detalhe_pelucia_tipo_id_fkey"
+            columns: ["pelucia_tipo_id"]
+            isOneToOne: false
+            referencedRelation: "pelucias_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leituras: {
+        Row: {
+          aprovada_por: string | null
+          assinatura_base64: string | null
+          cliente_id: string
+          created_at: string
+          data_leitura: string
+          id: string
+          maquina_id: string
+          observacoes: string | null
+          offline_synced: boolean
+          pelucias_saidas: number
+          percentual_aplicado: number
+          status: Database["public"]["Enums"]["leitura_status"]
+          updated_at: string
+          usuario_id: string
+          valor_comissao: number
+          valor_faturado: number
+          valor_liquido: number
+        }
+        Insert: {
+          aprovada_por?: string | null
+          assinatura_base64?: string | null
+          cliente_id: string
+          created_at?: string
+          data_leitura?: string
+          id?: string
+          maquina_id: string
+          observacoes?: string | null
+          offline_synced?: boolean
+          pelucias_saidas?: number
+          percentual_aplicado: number
+          status?: Database["public"]["Enums"]["leitura_status"]
+          updated_at?: string
+          usuario_id: string
+          valor_comissao: number
+          valor_faturado: number
+          valor_liquido: number
+        }
+        Update: {
+          aprovada_por?: string | null
+          assinatura_base64?: string | null
+          cliente_id?: string
+          created_at?: string
+          data_leitura?: string
+          id?: string
+          maquina_id?: string
+          observacoes?: string | null
+          offline_synced?: boolean
+          pelucias_saidas?: number
+          percentual_aplicado?: number
+          status?: Database["public"]["Enums"]["leitura_status"]
+          updated_at?: string
+          usuario_id?: string
+          valor_comissao?: number
+          valor_faturado?: number
+          valor_liquido?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leituras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencoes: {
+        Row: {
+          custo: number | null
+          data_manutencao: string
+          descricao: string
+          fotos_urls: string[] | null
+          id: string
+          maquina_id: string
+          resolvida: boolean
+          tipo: Database["public"]["Enums"]["manutencao_tipo"]
+          usuario_id: string
+        }
+        Insert: {
+          custo?: number | null
+          data_manutencao?: string
+          descricao: string
+          fotos_urls?: string[] | null
+          id?: string
+          maquina_id: string
+          resolvida?: boolean
+          tipo: Database["public"]["Enums"]["manutencao_tipo"]
+          usuario_id: string
+        }
+        Update: {
+          custo?: number | null
+          data_manutencao?: string
+          descricao?: string
+          fotos_urls?: string[] | null
+          id?: string
+          maquina_id?: string
+          resolvida?: boolean
+          tipo?: Database["public"]["Enums"]["manutencao_tipo"]
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencoes_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maquina_estoque: {
+        Row: {
+          id: string
+          maquina_id: string
+          pelucia_tipo_id: string
+          quantidade_atual: number
+          quantidade_minima: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          maquina_id: string
+          pelucia_tipo_id: string
+          quantidade_atual?: number
+          quantidade_minima?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          maquina_id?: string
+          pelucia_tipo_id?: string
+          quantidade_atual?: number
+          quantidade_minima?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maquina_estoque_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maquina_estoque_pelucia_tipo_id_fkey"
+            columns: ["pelucia_tipo_id"]
+            isOneToOne: false
+            referencedRelation: "pelucias_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maquinas: {
+        Row: {
+          cliente_id: string
+          codigo_identificacao: string
+          created_at: string
+          data_instalacao: string | null
+          id: string
+          modelo: string | null
+          observacoes: string | null
+          qr_code_url: string | null
+          status: Database["public"]["Enums"]["maquina_status"]
+          updated_at: string
+        }
+        Insert: {
+          cliente_id: string
+          codigo_identificacao: string
+          created_at?: string
+          data_instalacao?: string | null
+          id?: string
+          modelo?: string | null
+          observacoes?: string | null
+          qr_code_url?: string | null
+          status?: Database["public"]["Enums"]["maquina_status"]
+          updated_at?: string
+        }
+        Update: {
+          cliente_id?: string
+          codigo_identificacao?: string
+          created_at?: string
+          data_instalacao?: string | null
+          id?: string
+          modelo?: string | null
+          observacoes?: string | null
+          qr_code_url?: string | null
+          status?: Database["public"]["Enums"]["maquina_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maquinas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pagamentos: {
+        Row: {
+          cliente_id: string
+          comprovante_url: string | null
+          created_at: string
+          data_pagamento: string
+          forma_pagamento: Database["public"]["Enums"]["pagamento_forma"]
+          id: string
+          leituras_cobertas: string[] | null
+          observacoes: string | null
+          registrado_por: string
+          valor: number
+        }
+        Insert: {
+          cliente_id: string
+          comprovante_url?: string | null
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento: Database["public"]["Enums"]["pagamento_forma"]
+          id?: string
+          leituras_cobertas?: string[] | null
+          observacoes?: string | null
+          registrado_por: string
+          valor: number
+        }
+        Update: {
+          cliente_id?: string
+          comprovante_url?: string | null
+          created_at?: string
+          data_pagamento?: string
+          forma_pagamento?: Database["public"]["Enums"]["pagamento_forma"]
+          id?: string
+          leituras_cobertas?: string[] | null
+          observacoes?: string | null
+          registrado_por?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pelucias_tipos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          custo_unitario: number
+          id: string
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          nome: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          custo_unitario?: number
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      permissions: {
+        Row: {
+          id: string
+          permitido: boolean
+          recurso: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          id?: string
+          permitido?: boolean
+          recurso: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          id?: string
+          permitido?: boolean
+          recurso?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          email: string | null
+          id: string
+          nome_completo: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          id: string
+          nome_completo?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          email?: string | null
+          id?: string
+          nome_completo?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reposicoes: {
+        Row: {
+          data_reposicao: string
+          id: string
+          maquina_id: string
+          observacoes: string | null
+          pelucia_tipo_id: string
+          quantidade: number
+          usuario_id: string
+        }
+        Insert: {
+          data_reposicao?: string
+          id?: string
+          maquina_id: string
+          observacoes?: string | null
+          pelucia_tipo_id: string
+          quantidade: number
+          usuario_id: string
+        }
+        Update: {
+          data_reposicao?: string
+          id?: string
+          maquina_id?: string
+          observacoes?: string | null
+          pelucia_tipo_id?: string
+          quantidade?: number
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reposicoes_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reposicoes_pelucia_tipo_id_fkey"
+            columns: ["pelucia_tipo_id"]
+            isOneToOne: false
+            referencedRelation: "pelucias_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "master" | "admin" | "usuario"
+      leitura_status: "pendente_pagamento" | "pago" | "cancelado"
+      manutencao_tipo: "preventiva" | "corretiva"
+      maquina_status: "ativa" | "manutencao" | "removida" | "desativada"
+      pagamento_forma: "dinheiro" | "pix" | "transferencia" | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +735,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["master", "admin", "usuario"],
+      leitura_status: ["pendente_pagamento", "pago", "cancelado"],
+      manutencao_tipo: ["preventiva", "corretiva"],
+      maquina_status: ["ativa", "manutencao", "removida", "desativada"],
+      pagamento_forma: ["dinheiro", "pix", "transferencia", "outro"],
+    },
   },
 } as const
