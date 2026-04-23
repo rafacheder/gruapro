@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import PageHeader from "@/components/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { FileText, Loader2, Download, Filter } from "lucide-react";
+import { FileText, Loader2, Download, Filter, CreditCard } from "lucide-react";
 import { formatBRL, formatDate, formatDateTime, formatPercent } from "@/lib/format";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
