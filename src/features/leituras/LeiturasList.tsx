@@ -26,6 +26,8 @@ import {
    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
    const [batchSelection, setBatchSelection] = useState<{ids: string[], clienteId: string} | null>(null);
  
+   const showFinancials = canSeeFinancials(role);
+   const [items, setItems] = useState<any[]>([]);
    const isAdmin = role === 'admin' || role === 'master';
  
    const selectedItems = useMemo(() => {
@@ -48,8 +50,6 @@ import {
      
      return { valid: true, error: null, clienteId: firstClienteId };
    }, [selectedItems, selectedIds]);
-  const showFinancials = canSeeFinancials(role);
-   const [items, setItems] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
