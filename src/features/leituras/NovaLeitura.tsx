@@ -9,9 +9,22 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
- import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff, Info, TrendingDown } from "lucide-react";
  import { Html5QrcodeScanner } from "html5-qrcode";
 import { calcComissao, formatBRL } from "@/lib/format";
+import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
+import { differenceInDays, parseISO, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { logAudit } from "@/lib/audit";
  import { useAuth } from "@/contexts/AuthContext";
  import { useOnlineStatus } from "@/hooks/use-online-status";
@@ -55,7 +68,9 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
   const [fotos, setFotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
-  const [mediaAnterior, setMediaAnterior] = useState<number | null>(null);
+  const [ultimaLeitura, setUltimaLeitura] = useState<any | null>(null);
+  const [variacao, setVariacao] = useState<VariacaoLeitura | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
 
    useEffect(() => {
      let timer: any;
@@ -145,18 +160,19 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
   }, []);
 
   useEffect(() => {
-    if (!maquinaId) { setMediaAnterior(null); return; }
+    if (!maquinaId) {
+      setUltimaLeitura(null);
+      return;
+    }
     supabase
-      .from("leituras")
-      .select("valor_faturado")
+      .from("vw_leituras_com_anterior")
+      .select("*")
       .eq("maquina_id", maquinaId)
       .order("data_leitura", { ascending: false })
-      .limit(3)
+      .limit(1)
+      .maybeSingle()
       .then(({ data }) => {
-        if (data && data.length > 0) {
-          const m = data.reduce((s, r) => s + Number(r.valor_faturado), 0) / data.length;
-          setMediaAnterior(m);
-        } else setMediaAnterior(null);
+        setUltimaLeitura(data);
       });
   }, [maquinaId]);
 
@@ -165,7 +181,25 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
   const valorNum = parseFloat(valorFaturado.replace(",", ".")) || 0;
   const { comissao, liquido } = useMemo(() => calcComissao(valorNum, percentual), [valorNum, percentual]);
 
-  const alertaQueda = mediaAnterior && valorNum > 0 && valorNum < mediaAnterior * 0.7;
+  useEffect(() => {
+    if (ultimaLeitura && valorNum >= 0) {
+      const currentData = {
+        valor_faturado: valorNum,
+        pelucias_saidas: parseInt(pelucias) || 0,
+        data_leitura: new Date().toISOString()
+      };
+      
+      const v = calcularVariacao(currentData, {
+        valor_faturado: Number(ultimaLeitura.valor_faturado),
+        pelucias_saidas: Number(ultimaLeitura.pelucias_saidas),
+        data_leitura: ultimaLeitura.data_leitura,
+        data_leitura_previa: ultimaLeitura.data_leitura_previa
+      });
+      setVariacao(v);
+    } else {
+      setVariacao(null);
+    }
+  }, [ultimaLeitura, valorNum, pelucias]);
 
   const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = Array.from(e.target.files || []);
@@ -183,11 +217,16 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
     setPreviews((p) => p.filter((_, idx) => idx !== i));
   };
 
-   const handleSubmit = async (e: React.FormEvent) => {
-     e.preventDefault();
+   const handleSubmit = async (e?: React.FormEvent) => {
+     if (e) e.preventDefault();
      if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
      if (valorNum < 0) { toast.error("Valor inválido"); return; }
      if (!user) { toast.error("Sessão expirada"); return; }
+
+     if (variacao?.nivelAlerta === 'critico' && !showConfirm) {
+       setShowConfirm(true);
+       return;
+     }
  
      setSaving(true);
      try {
@@ -270,14 +309,33 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
      }
    };
 
-  return (
-    <div>
-      <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate(-1)}>
-        <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-      </Button>
-      <PageHeader title="Nova leitura" description="Coleta em campo" />
+   const diasUltimaLeitura = ultimaLeitura ? differenceInDays(new Date(), parseISO(ultimaLeitura.data_leitura)) : 0;
+   const faturamentoDiaAnterior = ultimaLeitura?.data_leitura_previa 
+     ? ultimaLeitura.valor_faturado / Math.max(1, differenceInDays(parseISO(ultimaLeitura.data_leitura), parseISO(ultimaLeitura.data_leitura_previa)))
+     : 0;
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+   return (
+     <div>
+       <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate(-1)}>
+         <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+       </Button>
+       <PageHeader title="Nova leitura" description="Coleta em campo" />
+
+       {ultimaLeitura && (
+         <Card className="p-4 mb-4 bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/20">
+           <div className="flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-400 font-medium text-sm">
+             <Info className="h-4 w-4" />
+             📊 Última leitura: {format(parseISO(ultimaLeitura.data_leitura), "dd/MM/yyyy")} (há {diasUltimaLeitura} dias)
+           </div>
+           <div className="text-xs text-blue-600 dark:text-blue-300 grid grid-cols-3 gap-2">
+             <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
+             <div>Pelúcias: <span className="font-semibold">{ultimaLeitura.pelucias_saidas}</span></div>
+             <div>{formatBRL(faturamentoDiaAnterior)}/dia</div>
+           </div>
+         </Card>
+       )}
+ 
+       <form onSubmit={handleSubmit} className="space-y-4">
         <Card className="p-5 space-y-4 bg-card">
            <div className="space-y-3">
              <div className="flex items-center justify-between">
@@ -338,13 +396,19 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
             </div>
           </div>
 
-          {alertaQueda && (
-            <div className="flex items-start gap-2 p-3 rounded-md bg-warning/15 border border-warning/30">
-              <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+          {variacao && variacao.nivelAlerta !== 'normal' && (
+            <div className={`flex items-start gap-2 p-3 rounded-md border ${
+              variacao.nivelAlerta === 'critico' 
+                ? 'bg-destructive/15 border-destructive/30 text-destructive' 
+                : 'bg-warning/15 border-warning/30 text-warning'
+            }`}>
+              <TrendingDown className="h-4 w-4 shrink-0 mt-0.5" />
               <div className="text-xs">
-                <div className="font-medium text-warning">Queda de mais de 30%</div>
-                <div className="text-muted-foreground">
-                  Média das últimas 3 leituras: {formatBRL(mediaAnterior!)}. Confira o valor antes de salvar.
+                <div className="font-medium">
+                  {variacao.nivelAlerta === 'critico' ? '⚠️ Queda crítica detectada!' : 'Atenção: Queda detectada'}
+                </div>
+                <div className="opacity-90">
+                  Queda de {Math.abs(Math.round(variacao.variacaoDiaria))}% no faturamento médio diário.
                 </div>
               </div>
             </div>
@@ -427,6 +491,27 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
           </Button>
         </div>
       </form>
+
+      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Queda Crítica</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta leitura representa uma queda de {Math.abs(Math.round(variacao?.variacaoDiaria || 0))}% em relação ao faturamento médio diário da leitura anterior. 
+              Confirma os valores digitados?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Revisar valores</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setShowConfirm(false);
+              handleSubmit();
+            }}>
+              Confirmar e salvar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
-import { ArrowLeft, FileDown, Loader2, TrendingDown, TrendingUp } from "lucide-react";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { ArrowLeft, FileDown, Loader2, TrendingDown, TrendingUp, Minus, AlertCircle, History } from "lucide-react";
+import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
+import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
 import { gerarPdfLeitura } from "@/lib/pdf";
 import { logAudit } from "@/lib/audit";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ export default function LeituraDetalhe() {
   const [leitura, setLeitura] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [fotos, setFotos] = useState<any[]>([]);
-  const [anterior, setAnterior] = useState<number | null>(null);
+  const [variacaoResult, setVariacaoResult] = useState<VariacaoLeitura | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
@@ -31,7 +32,7 @@ export default function LeituraDetalhe() {
       let isRetrying = false;
       try {
         const { data: l, error } = await supabase
-          .from("leituras")
+          .from("vw_leituras_com_anterior")
           .select("*, clientes(nome_ponto, nome_responsavel, cidade, estado), maquinas(codigo_identificacao, modelo), profiles(nome_completo)")
           .eq("id", id)
           .maybeSingle();
@@ -51,16 +52,19 @@ export default function LeituraDetalhe() {
         setLeitura(l);
         setFotos(f || []);
         
-        if (l) {
-          const { data: ant } = await supabase
-            .from("leituras")
-            .select("valor_faturado")
-            .eq("maquina_id", l.maquina_id)
-            .lt("data_leitura", l.data_leitura)
-            .order("data_leitura", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          setAnterior(ant ? Number(ant.valor_faturado) : null);
+        if (l && l.data_leitura_previa) {
+          const v = calcularVariacao(
+            { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+            { 
+              valor_faturado: Number(l.valor_faturado_previo), 
+              pelucias_saidas: l.pelucias_saidas_previa, 
+              data_leitura: l.data_leitura_previa,
+              data_leitura_previa: l.data_leitura_pre_previa
+            }
+          );
+          setVariacaoResult(v);
+        } else {
+          setVariacaoResult(null);
         }
       } catch (err) {
         console.error("Erro ao carregar leitura:", id, err);
@@ -139,8 +143,6 @@ export default function LeituraDetalhe() {
    }
 
   const valorAtual = Number(leitura.valor_faturado);
-  const variacao = anterior ? ((valorAtual - anterior) / anterior) * 100 : null;
-  const variacaoNeg = variacao !== null && variacao < -30;
 
   return (
     <div>
@@ -183,14 +185,65 @@ export default function LeituraDetalhe() {
           <Badge variant={leitura.status === "pago" ? "default" : "secondary"}>
             {leitura.status === "pendente_pagamento" ? "Pendente" : leitura.status}
           </Badge>
-          {variacao !== null && (
-            <div className={`flex items-center gap-1 text-xs ${variacaoNeg ? "text-destructive" : variacao > 0 ? "text-success" : "text-muted-foreground"}`}>
-              {variacao > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {variacao > 0 ? "+" : ""}{variacao.toFixed(1)}% vs leitura anterior
-            </div>
-          )}
         </div>
       </Card>
+
+      {variacaoResult && (
+        <Card className="p-5 bg-card mb-4 border-l-4 border-l-accent">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <History className="h-4 w-4 text-accent" />
+              Comparativo com leitura anterior
+            </h3>
+            {leitura.leitura_previa_id && (
+               <Link 
+                 to={`/leituras/${leitura.leitura_previa_id}`} 
+                 className="text-xs text-accent hover:underline flex items-center gap-1"
+               >
+                 Ver leitura anterior
+               </Link>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Faturamento</div>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold flex items-center gap-1 ${
+                  variacaoResult.nivelAlerta === 'critico' ? 'text-destructive' : 
+                  variacaoResult.nivelAlerta === 'atencao' ? 'text-warning' : 
+                  variacaoResult.variacaoDiaria > 5 ? 'text-success' : 'text-muted-foreground'
+                }`}>
+                  {variacaoResult.variacaoDiaria > 5 ? <TrendingUp className="h-3 w-3" /> : 
+                   variacaoResult.variacaoDiaria < -5 ? (variacaoResult.nivelAlerta === 'critico' ? <AlertCircle className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />) : 
+                   <Minus className="h-3 w-3" />}
+                  {formatPercent(variacaoResult.variacaoDiaria)}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-normal">(diário)</span>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Pelúcias</div>
+              <div className="flex items-center gap-2">
+                <span className={`text-sm font-bold flex items-center gap-1 ${
+                  variacaoResult.variacaoPelucias > 0 ? 'text-success' : 
+                  variacaoResult.variacaoPelucias < 0 ? 'text-destructive' : 'text-muted-foreground'
+                }`}>
+                  {variacaoResult.variacaoPelucias > 0 ? <TrendingUp className="h-3 w-3" /> : 
+                   variacaoResult.variacaoPelucias < 0 ? <TrendingDown className="h-3 w-3" /> : 
+                   <Minus className="h-3 w-3" />}
+                  {formatPercent(variacaoResult.variacaoPelucias)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="col-span-2 text-[10px] text-muted-foreground pt-1 border-t border-border/50">
+              Intervalo entre leituras: {variacaoResult.diasEntreLeituras} dias
+            </div>
+          </div>
+        </Card>
+      )}
 
       {leitura.observacoes && (
         <Card className="p-5 bg-card mb-4">

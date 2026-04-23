@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
-import { ClipboardList, Plus, Loader2 } from "lucide-react";
+import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle } from "lucide-react";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
-import { formatBRL, formatDateTime } from "@/lib/format";
+import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
+import { calcularVariacao } from "@/utils/reading-calculations";
 
 export default function LeiturasList() {
   const navigate = useNavigate();
@@ -20,12 +21,24 @@ export default function LeiturasList() {
 
   useEffect(() => {
     supabase
-      .from("leituras")
-      .select("id, data_leitura, valor_faturado, valor_comissao, pelucias_saidas, status, maquinas(codigo_identificacao), clientes(nome_ponto)")
+      .from("vw_leituras_com_anterior")
+      .select("*, maquinas(codigo_identificacao), clientes(nome_ponto)")
       .order("data_leitura", { ascending: false })
       .limit(100)
       .then(({ data }) => {
-        setItems(data || []);
+        const mapped = (data || []).map(l => {
+          const variacao = l.data_leitura_previa ? calcularVariacao(
+            { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+            { 
+              valor_faturado: Number(l.valor_faturado_previo), 
+              pelucias_saidas: l.pelucias_saidas_previa, 
+              data_leitura: l.data_leitura_previa,
+              data_leitura_previa: l.data_leitura_pre_previa
+            }
+          ) : null;
+          return { ...l, variacao };
+        });
+        setItems(mapped);
         setLoading(false);
       });
   }, []);
@@ -59,13 +72,27 @@ export default function LeiturasList() {
           {items.map((l) => (
             <Link key={l.id} to={`/leituras/${l.id}`}>
               <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-sm font-semibold truncate">{l.clientes?.nome_ponto}</div>
                   <div className="text-xs text-muted-foreground truncate">
                     {l.maquinas?.codigo_identificacao} • {formatDateTime(l.data_leitura)}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {formatBRL(l.valor_faturado)} • {l.pelucias_saidas} pelúcia(s)
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="text-xs text-muted-foreground">
+                      {formatBRL(l.valor_faturado)} • {l.pelucias_saidas} pelúcia(s)
+                    </div>
+                    {l.variacao && (
+                      <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
+                        l.variacao.nivelAlerta === 'critico' ? 'text-destructive' : 
+                        l.variacao.nivelAlerta === 'atencao' ? 'text-warning' : 
+                        l.variacao.variacaoDiaria > 5 ? 'text-success' : 'text-muted-foreground'
+                      }`}>
+                        {l.variacao.variacaoDiaria > 5 ? <TrendingUp className="h-3 w-3" /> : 
+                         l.variacao.variacaoDiaria < -5 ? (l.variacao.nivelAlerta === 'critico' ? <AlertTriangle className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />) : 
+                         <Minus className="h-3 w-3" />}
+                        <span className="hidden sm:inline">{formatPercent(l.variacao.variacaoDiaria)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
