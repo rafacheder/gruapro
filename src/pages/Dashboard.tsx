@@ -30,15 +30,19 @@ interface Stats {
   minhasLeiturasHoje: number;
 }
 
-export default function Dashboard() {
-  const { role, nome } = useAuth();
-  const navigate = useNavigate();
+ export default function Dashboard() {
+   const { role, nome } = useAuth();
+   const navigate = useNavigate();
    const [stats, setStats] = useState<Stats | null>(null);
    const [periodType, setPeriodType] = useState<PeriodType>("mes");
    const [customRange, setCustomRange] = useState<DateRange | undefined>({
      from: new Date(),
      to: new Date()
    });
+   const [alertas, setAlertas] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [loadingAlerts, setLoadingAlerts] = useState(false);
+ 
    const periodDates = useMemo(() => {
      const range = customRange?.from && customRange?.to 
        ? { from: customRange.from, to: customRange.to } 
@@ -46,46 +50,43 @@ export default function Dashboard() {
      return getPeriodDates(periodType, range);
    }, [periodType, customRange]);
  
-  const [alertas, setAlertas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingAlerts, setLoadingAlerts] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
-      const inicioHoje = new Date();
-      inicioHoje.setHours(0, 0, 0, 0);
-
-      const [todasLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
-        supabase
-          .from("leituras")
-          .select("valor_faturado, valor_comissao, valor_liquido, status"),
-        supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
-        supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
-        supabase
-          .from("leituras")
-          .select("id", { count: "exact", head: true })
-          .gte("data_leitura", inicioHoje.toISOString()),
-      ]);
-
-      const rows = todasLeituras.data || [];
-
-      setStats({
-        faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
-        comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
-        liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
-        clientesAtivos: clientesAtivos.count || 0,
-        maquinasAtivas: maquinasAtivas.count || 0,
-        leiturasMes: rows.length,
-        minhasLeiturasHoje: minhasHoje.count || 0,
-      });
-      setLoading(false);
-    };
-    load();
-  }, []);
+   useEffect(() => {
+     const load = async () => {
+       setLoading(true);
+       const inicioHoje = new Date();
+       inicioHoje.setHours(0, 0, 0, 0);
+ 
+       const { start, end } = periodDates;
+ 
+       const [periodoLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
+         supabase
+           .from("leituras")
+           .select("valor_faturado, valor_comissao, valor_liquido, status")
+           .gte("data_leitura", start.toISOString())
+           .lte("data_leitura", end.toISOString()),
+         supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
+         supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
+         supabase
+           .from("leituras")
+           .select("id", { count: "exact", head: true })
+           .gte("data_leitura", inicioHoje.toISOString()),
+       ]);
+ 
+       const rows = periodoLeituras.data || [];
+ 
+       setStats({
+         faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
+         comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
+         liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
+         clientesAtivos: clientesAtivos.count || 0,
+         maquinasAtivas: maquinasAtivas.count || 0,
+         leiturasMes: rows.length,
+         minhasLeiturasHoje: minhasHoje.count || 0,
+       });
+       setLoading(false);
+     };
+     load();
+   }, [periodDates]);
 
   useEffect(() => {
     if (role === 'usuario') return;
