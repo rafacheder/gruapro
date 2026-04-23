@@ -1,4 +1,3 @@
-   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +20,7 @@ import {
 export default function LeiturasList() {
   const navigate = useNavigate();
   const { role } = useAuth();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const showFinancials = canSeeFinancials(role);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [items, setItems] = useState<any[]>([]);
