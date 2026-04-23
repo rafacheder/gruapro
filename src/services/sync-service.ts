@@ -50,7 +50,12 @@ export async function syncPendingLeituras() {
           percentual_aplicado: leitura.percentual_comissao,
           observacoes: leitura.observacoes,
           data_leitura: leitura.data_leitura,
-          status: 'pendente'
+          status: 'pendente',
+          contador_entrada_atual: leitura.contador_entrada_atual,
+          contador_saida_atual: leitura.contador_saida_atual,
+          contador_entrada_anterior: leitura.contador_entrada_anterior,
+          contador_saida_anterior: leitura.contador_saida_anterior,
+          valor_por_credito: leitura.valor_por_credito,
         })
         .select('id')
         .single();
