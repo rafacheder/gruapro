@@ -41,7 +41,7 @@ interface RegisterPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
-   initialLeituraId?: string;
+    initialLeituraIds?: string[];
    initialClienteId?: string;
 }
 
@@ -103,7 +103,7 @@ export default function RegisterPaymentDialog({
          avulso: false,
       });
       setFile(null);
-       setSelectedLeituras(initialLeituraId ? [initialLeituraId] : []);
+       setSelectedLeituras(initialLeituraIds || []);
        if (initialClienteId) {
          loadPendingLeituras(initialClienteId);
        } else {
