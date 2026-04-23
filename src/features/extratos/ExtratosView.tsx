@@ -277,7 +277,7 @@ export default function ExtratosView() {
               <h2 className="text-2xl font-bold">{previewData.cliente.nome_ponto}</h2>
               <p className="text-muted-foreground">{previewData.cliente.nome_responsavel} • {previewData.cliente.cidade}/{previewData.cliente.estado}</p>
             </div>
-            <Button onClick={generatePDF} className="bg-green-600 hover:bg-green-700 text-white">
+            <Button onClick={generatePDF} className="bg-success hover:bg-success/90 text-success-foreground">
               <Download className="h-4 w-4 mr-2" /> Baixar Extrato em PDF
             </Button>
           </div>
