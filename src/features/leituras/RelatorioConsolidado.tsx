@@ -110,14 +110,14 @@ export default function RelatorioConsolidado() {
      }), { totalGeral: 0, totalComissao: 0, totalLiquido: 0 });
    }, [leituras]);
  
-   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
-
    const { totalEntrada, totalSaida } = useMemo(() => {
      return leituras.reduce((acc, l) => ({
        totalEntrada: acc.totalEntrada + ((l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0)),
        totalSaida: acc.totalSaida + ((l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0)),
      }), { totalEntrada: 0, totalSaida: 0 });
    }, [leituras]);
+ 
+   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
  
    return (
      <div className="max-w-4xl mx-auto px-4 pb-12">
@@ -259,10 +259,8 @@ export default function RelatorioConsolidado() {
          </div>
        </div>
  
-       <div className="grid gap-6 no-print">
-
-      <div className="grid gap-6">
-        <Card className="p-6">
+        <div className="grid gap-6 no-print">
+          <Card className="p-6">
           <div className="flex items-center gap-2 mb-4 text-success font-semibold">
             <CheckCircle2 className="h-5 w-5" />
             Coleta finalizada com sucesso!
@@ -307,15 +305,15 @@ export default function RelatorioConsolidado() {
                 ))}
               </div>
             </div>
-          </div>
-        </Card>
-
-        <div className="flex justify-center">
-          <Button variant="outline" onClick={() => navigate("/leituras")}>
-            Ir para lista de leituras
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+           </div>
+         </Card>
+ 
+         <div className="flex justify-center">
+           <Button variant="outline" onClick={() => navigate("/leituras")}>
+             Ir para lista de leituras
+           </Button>
+         </div>
+       </div>
+     </div>
+   );
+ }
