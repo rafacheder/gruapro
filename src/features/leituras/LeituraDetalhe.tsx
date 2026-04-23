@@ -135,6 +135,10 @@ export default function LeituraDetalhe() {
          maquina: leitura.maquinas,
          fotos: fotos.map((f) => f.foto_url),
          usuario_nome: nome || "Usuário",
+          contador_entrada_atual: leitura.contador_entrada_atual,
+          contador_saida_atual: leitura.contador_saida_atual,
+          contador_entrada_anterior: leitura.contador_entrada_anterior,
+          contador_saida_anterior: leitura.contador_saida_anterior,
        }, type);
        await logAudit({
          acao: type === 'a4' ? "GENERATE_PDF_LEITURA" : "GENERATE_PDF_LEITURA_THERMAL",
