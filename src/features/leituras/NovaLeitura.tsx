@@ -363,12 +363,12 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
        <PageHeader title="Nova leitura" description="Coleta em campo" />
 
        {ultimaLeitura && (
-         <Card className="p-4 mb-4 bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-900/20">
-           <div className="flex items-center gap-2 mb-2 text-blue-700 dark:text-blue-400 font-medium text-sm">
+          <Card className="p-4 mb-4 bg-secondary/30 border-secondary/50">
+            <div className="flex items-center gap-2 mb-2 text-secondary-foreground font-medium text-sm">
              <Info className="h-4 w-4" />
              📊 Última leitura: {format(parseISO(ultimaLeitura.data_leitura), "dd/MM/yyyy")} (há {diasUltimaLeitura} dias)
            </div>
-           <div className="text-xs text-blue-600 dark:text-blue-300 grid grid-cols-3 gap-2">
+            <div className="text-xs text-muted-foreground grid grid-cols-3 gap-2">
              <div>Faturamento: <span className="font-semibold">{formatBRL(ultimaLeitura.valor_faturado)}</span></div>
              <div>Pelúcias: <span className="font-semibold">{ultimaLeitura.pelucias_saidas}</span></div>
              <div>{formatBRL(faturamentoDiaAnterior)}/dia</div>
