@@ -22,6 +22,7 @@ import LeituraDetalhe from "@/features/leituras/LeituraDetalhe";
 import UsuariosList from "@/features/usuarios/UsuariosList";
 import AuditLog from "@/features/audit/AuditLog";
 import PagamentosList from "@/features/pagamentos/PagamentosList";
+ import PagamentoDetalhe from "@/features/pagamentos/PagamentoDetalhe";
 import ExtratosView from "@/features/extratos/ExtratosView";
 
 const queryClient = new QueryClient();
@@ -64,6 +65,11 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
                 <AppShell><PagamentosList /></AppShell>
               </ProtectedRoute>
             } />
+             <Route path="/pagamentos/:id" element={
+               <ProtectedRoute requireRoles={["master", "admin"]}>
+                 <AppShell><PagamentoDetalhe /></AppShell>
+               </ProtectedRoute>
+             } />
             <Route path="/extratos" element={
               <ProtectedRoute requireRoles={["master", "admin"]}>
                 <AppShell><ExtratosView /></AppShell>
