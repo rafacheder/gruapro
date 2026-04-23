@@ -54,16 +54,25 @@ import { calcularVariacao } from "@/utils/reading-calculations";
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 50;
 
-    const [filters, setFilters] = useState<FilterState>(() => {
+    const getFiltersFromSearchParams = useCallback((params: URLSearchParams): FilterState => {
       return {
-        clienteId: searchParams.get("cliente") || "",
-        maquinaId: searchParams.get("maquina") || "",
-        status: searchParams.get("status") || "all",
-        startDate: searchParams.get("inicio") ? parseISO(searchParams.get("inicio")!) : startOfMonth(new Date()),
-        endDate: searchParams.get("fim") ? parseISO(searchParams.get("fim")!) : new Date(),
-        operadorId: searchParams.get("operador") || "all"
+        clienteId: params.get("cliente") || "",
+        maquinaId: params.get("maquina") || "",
+        status: params.get("status") || "all",
+        startDate: params.get("inicio") ? parseISO(params.get("inicio")!) : startOfMonth(new Date()),
+        endDate: params.get("fim") ? parseISO(params.get("fim")!) : new Date(),
+        operadorId: params.get("operador") || "all"
       };
-    });
+    }, []);
+
+    const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams(searchParams));
+
+    useEffect(() => {
+      const newFilters = getFiltersFromSearchParams(searchParams);
+      if (JSON.stringify(newFilters) !== JSON.stringify(filters)) {
+        setFilters(newFilters);
+      }
+    }, [searchParams, filters, getFiltersFromSearchParams]);
 
     const fetchData = useCallback(async (isLoadMore = false) => {
       if (!isLoadMore) {
@@ -126,11 +135,16 @@ import { calcularVariacao } from "@/utils/reading-calculations";
         if (filters.operadorId !== "all") params.operador = filters.operadorId;
         if (filters.startDate) params.inicio = filters.startDate.toISOString();
         if (filters.endDate) params.fim = filters.endDate.toISOString();
-        setSearchParams(params);
+        
+        // Only update if different to avoid infinite loops
+        const currentParams = Object.fromEntries(searchParams.entries());
+        if (JSON.stringify(params) !== JSON.stringify(currentParams)) {
+          setSearchParams(params);
+        }
       }, 300);
 
       return () => clearTimeout(timeout);
-    }, [filters]);
+    }, [filters, fetchData, searchParams, setSearchParams]);
 
   return (
     <div className="flex flex-col gap-4">
