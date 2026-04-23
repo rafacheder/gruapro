@@ -114,27 +114,25 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
    function onScanFailure() { }
  
    const handleSelectMachine = async (id: string) => {
-     const { data: maquina, error } = await supabase
+      const { data: maquinaData, error } = await supabase
        .from("maquinas")
-       .select("id, status")
+        .select("id, status, cliente_id")
        .eq("id", id)
        .maybeSingle();
  
-     if (error || !maquina) {
+      if (error || !maquinaData) {
        toast.error("Máquina não encontrada");
        return;
      }
  
-     if (maquina.status !== "ativa") {
-       toast.error(`Máquina está com status: ${maquina.status}`);
+      if (maquinaData.status !== "ativa") {
+        toast.error(`Máquina está com status: ${maquinaData.status}`);
        return;
      }
  
-     const maquina = maquinas.find(m => m.id === id);
-     if (maquina) {
-       setMaquinaId(id);
-       setCurrentClienteId(maquina.cliente_id);
-     }
+      setMaquinaId(id);
+      setCurrentClienteId(maquinaData.cliente_id);
+
      setIsScanning(false);
      toast.success("Máquina selecionada via QR Code!");
    };
@@ -422,7 +420,7 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
                           type="button"
                           variant={isSelected ? "default" : "outline"}
                           size="sm"
-                          className={`h-auto py-1 px-3 text-xs ${jaLida && !isSelected ? 'opacity-60 grayscale border-green-200 bg-green-50 text-green-700' : ''}`}
+                          className={`h-auto py-1 px-3 text-xs ${jaLida && !isSelected ? 'opacity-60 grayscale border-success/20 bg-success/10 text-success-foreground' : ''}`}
                           onClick={() => {
                             setMaquinaId(m.id);
                             if (jaLida) toast.info("Esta máquina já foi registrada nesta sessão.");
