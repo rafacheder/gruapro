@@ -346,10 +346,20 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
           toast.success(`Leitura de ${maquinaSel.codigo_identificacao} registrada!`);
           setLeiturasRealizadas(prev => [...prev, maquinaSel.id]);
           
+          const sessionIds = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
+          sessionIds.push(leitura.id);
+          sessionStorage.setItem("session_leituras", JSON.stringify(sessionIds));
+
           if (proxima) {
             resetForm();
           } else {
-            navigate(`/leituras/${leitura.id}`);
+            const ids = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
+            sessionStorage.removeItem("session_leituras");
+            if (ids.length > 1) {
+              navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+            } else {
+              navigate(`/leituras/${leitura.id}`);
+            }
           }
        } else {
          // Modo offline
