@@ -13,7 +13,7 @@ import { formatDate } from "@/lib/format";
 
 interface Stats {
   faturamentoMes: number;
-  comissaoMes: number;
+  comissaoPendente: number;
   liquidoMes: number;
   clientesAtivos: number;
   maquinasAtivas: number;
@@ -38,11 +38,10 @@ export default function Dashboard() {
       const inicioHoje = new Date();
       inicioHoje.setHours(0, 0, 0, 0);
 
-      const [leiturasMes, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
+      const [todasLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
         supabase
           .from("leituras")
-          .select("valor_faturado, valor_comissao, valor_liquido")
-          .gte("data_leitura", inicioMes.toISOString()),
+          .select("valor_faturado, valor_comissao, valor_liquido, status"),
         supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
         supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
         supabase
@@ -51,10 +50,11 @@ export default function Dashboard() {
           .gte("data_leitura", inicioHoje.toISOString()),
       ]);
 
-      const rows = leiturasMes.data || [];
+      const rows = todasLeituras.data || [];
+
       setStats({
         faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
-        comissaoMes: rows.reduce((s, r) => s + Number(r.valor_comissao), 0),
+        comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
         liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
         clientesAtivos: clientesAtivos.count || 0,
         maquinasAtivas: maquinasAtivas.count || 0,
@@ -107,7 +107,7 @@ export default function Dashboard() {
         description={
           role === "usuario"
             ? "Pronto para fazer leituras em campo?"
-            : "Resumo do mês corrente"
+            : "Resumo geral do sistema"
         }
         action={
           <Button
@@ -123,23 +123,23 @@ export default function Dashboard() {
         {showFinancials && (
           <>
             <StatCard
-              title="Faturamento do mês"
+              title="Faturamento Total"
               value={loading ? "—" : formatBRL(stats?.faturamentoMes || 0)}
               icon={TrendingUp}
               accent
             />
             <StatCard
               title="Comissão a pagar"
-              value={loading ? "—" : formatBRL(stats?.comissaoMes || 0)}
+              value={loading ? "—" : formatBRL(stats?.comissaoPendente || 0)}
               icon={Wallet}
             />
             <StatCard
-              title="Líquido do mês"
+              title="Líquido Total"
               value={loading ? "—" : formatBRL(stats?.liquidoMes || 0)}
               icon={TrendingUp}
             />
             <StatCard
-              title="Leituras no mês"
+              title="Total de Leituras"
               value={loading ? "—" : formatNumber(stats?.leiturasMes || 0)}
               icon={ClipboardList}
             />
