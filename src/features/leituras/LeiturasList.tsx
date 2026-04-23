@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -22,9 +22,7 @@ export default function LeiturasList() {
   const { role } = useAuth();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const showFinancials = canSeeFinancials(role);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [items, setItems] = useState<any[]>([]);
-  const [filteredItems, setFilteredItems] = useState<any[]>([]);
+   const [items, setItems] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
@@ -53,13 +51,10 @@ export default function LeiturasList() {
       });
   }, []);
 
-  useEffect(() => {
-    if (statusFilter === "all") {
-      setFilteredItems(items);
-    } else {
-      setFilteredItems(items.filter(i => i.status === statusFilter));
-    }
-  }, [statusFilter, items]);
+   const filteredItems = useMemo(() => {
+     if (statusFilter === "all") return items;
+     return items.filter(i => i.status === statusFilter);
+   }, [statusFilter, items]);
 
   return (
     <div className="flex flex-col gap-4">
