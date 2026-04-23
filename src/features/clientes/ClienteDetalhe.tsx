@@ -10,7 +10,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
- import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2, FileText } from "lucide-react";
+ import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2, FileText, ChevronDown, Printer } from "lucide-react";
+ import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+ } from "@/components/ui/dropdown-menu";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
@@ -78,19 +84,44 @@ export default function ClienteDetalhe() {
         action={
           canEdit && (
             <div className="flex gap-2">
-               <Button variant="outline" size="sm" onClick={() => {
-                 const period = prompt("Digite o período (ex: 30 para últimos 30 dias, ou deixe em branco para todas as recentes):", "30");
-                 if (period === null) return;
-                 const limit = parseInt(period) || 100;
-                 const ids = leituras.slice(0, limit).map(l => l.id);
-                 if (ids.length === 0) {
-                   toast.error("Nenhuma leitura encontrada para este cliente.");
-                   return;
-                 }
-                 navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
-               }}>
-                 <FileText className="h-4 w-4 mr-1" /> Relatório Consolidado
-               </Button>
+                <div className="flex">
+                  <Button variant="outline" size="sm" className="rounded-r-none border-r-0" onClick={() => {
+                    const period = prompt("Digite o período (ex: 30 para últimos 30 dias, ou deixe em branco para todas as recentes):", "30");
+                    if (period === null) return;
+                    const limit = parseInt(period) || 100;
+                    const ids = leituras.slice(0, limit).map(l => l.id);
+                    if (ids.length === 0) {
+                      toast.error("Nenhuma leitura encontrada para este cliente.");
+                      return;
+                    }
+                    navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+                  }}>
+                    <FileText className="h-4 w-4 mr-1" /> Relatório
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="rounded-l-none px-2 border-l-0">
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        const ids = leituras.slice(0, 30).map(l => l.id);
+                        if (ids.length === 0) return;
+                        navigate(`/leituras/consolidado?ids=${ids.join(",")}&format=a4`);
+                      }}>
+                        <FileText className="h-4 w-4 mr-2" /> PDF A4 (Padrão)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        const ids = leituras.slice(0, 30).map(l => l.id);
+                        if (ids.length === 0) return;
+                        navigate(`/leituras/consolidado?ids=${ids.join(",")}&format=thermal`);
+                      }}>
+                        <Printer className="h-4 w-4 mr-2" /> PDF Bobina 57mm
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                <Button variant="secondary" size="sm" onClick={() => navigate(`/clientes/${id}/editar`)}>
                  <Pencil className="h-4 w-4 mr-1" /> Editar
                </Button>
