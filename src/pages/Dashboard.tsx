@@ -6,7 +6,8 @@ import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatNumber } from "@/lib/format";
-import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { calcularVariacao } from "@/utils/reading-calculations";
 import { formatDate } from "@/lib/format";
 
