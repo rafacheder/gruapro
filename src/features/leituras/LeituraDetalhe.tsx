@@ -6,13 +6,27 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
-import { ArrowLeft, FileDown, Loader2, TrendingDown, TrendingUp, Minus, AlertCircle, History } from "lucide-react";
+ import { 
+   ArrowLeft, 
+   FileDown, 
+   Loader2, 
+   TrendingDown, 
+   TrendingUp, 
+   Minus, 
+   AlertCircle, 
+   History, 
+   CheckCircle2,
+   CreditCard,
+   ExternalLink
+ } from "lucide-react";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
 import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
 import { gerarPdfLeitura } from "@/lib/pdf";
 import { logAudit } from "@/lib/audit";
 import { toast } from "sonner";
 
+ import RegisterPaymentDialog from "../pagamentos/RegisterPaymentDialog";
+ 
 export default function LeituraDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -22,7 +36,9 @@ export default function LeituraDetalhe() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leitura, setLeitura] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [fotos, setFotos] = useState<any[]>([]);
+   const [fotos, setFotos] = useState<any[]>([]);
+   const [pagamentoInfo, setPagamentoInfo] = useState<any>(null);
+   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [variacaoResult, setVariacaoResult] = useState<VariacaoLeitura | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -47,7 +63,19 @@ export default function LeituraDetalhe() {
           return;
         }
 
-        const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
+         const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
+ 
+         // Load payment info if paid
+         if (l && l.status === "pago") {
+           const { data: pLink } = await supabase
+             .from("pagamento_leituras")
+             .select("pagamento_id, pagamentos(*)")
+             .eq("leitura_id", id)
+             .maybeSingle();
+           if (pLink) {
+             setPagamentoInfo(pLink.pagamentos);
+           }
+         }
         
         setLeitura(l);
         setFotos(f || []);
