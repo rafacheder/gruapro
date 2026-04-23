@@ -26,31 +26,56 @@ export default function LeituraDetalhe() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data: l } = await supabase
-        .from("leituras")
-        .select("*, clientes(nome_ponto, nome_responsavel, cidade, estado), maquinas(codigo_identificacao, modelo), profiles!leituras_usuario_id_fkey(nome_completo)")
-        .eq("id", id)
-        .maybeSingle();
-      const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
-      setLeitura(l);
-      setFotos(f || []);
-      if (l) {
-        const { data: ant } = await supabase
-          .from("leituras")
-          .select("valor_faturado")
-          .eq("maquina_id", l.maquina_id)
-          .lt("data_leitura", l.data_leitura)
-          .order("data_leitura", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        setAnterior(ant ? Number(ant.valor_faturado) : null);
-      }
-      setLoading(false);
-    };
-    load();
-  }, [id]);
+   useEffect(() => {
+     const load = async (retryCount = 0) => {
+       try {
+         const { data: l, error } = await supabase
+           .from("leituras")
+           .select("*, clientes(nome_ponto, nome_responsavel, cidade, estado), maquinas(codigo_identificacao, modelo), profiles(nome_completo)")
+           .eq("id", id)
+           .maybeSingle();
+ 
+         if (error) throw error;
+ 
+         // If not found and we haven't retried yet, wait a bit and try again
+         // This handles potential race conditions after redirect from NovaLeitura
+         if (!l && retryCount < 2) {
+           setTimeout(() => load(retryCount + 1), 1000);
+           return;
+         }
+ 
+         const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
+         
+         setLeitura(l);
+         setFotos(f || []);
+         
+         if (l) {
+           const { data: ant } = await supabase
+             .from("leituras")
+             .select("valor_faturado")
+             .eq("maquina_id", l.maquina_id)
+             .lt("data_leitura", l.data_leitura)
+             .order("data_leitura", { ascending: false })
+             .limit(1)
+             .maybeSingle();
+           setAnterior(ant ? Number(ant.valor_faturado) : null);
+         }
+       } catch (err) {
+         console.error("Erro ao carregar leitura:", err);
+         toast.error("Erro ao carregar dados da leitura");
+       } finally {
+         if (retryCount >= 2 || (leitura || !id)) {
+           setLoading(false);
+         }
+       }
+     };
+     
+     if (id) {
+       load();
+     } else {
+       setLoading(false);
+     }
+   }, [id]);
 
   const handlePdf = async () => {
     if (!leitura) return;
@@ -85,8 +110,31 @@ export default function LeituraDetalhe() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
-  if (!leitura) return <div>Leitura não encontrada</div>;
+   if (loading) {
+     return (
+       <div className="flex flex-col items-center justify-center py-12 space-y-4">
+         <Loader2 className="h-8 w-8 animate-spin text-accent" />
+         <p className="text-sm text-muted-foreground">Carregando detalhes da leitura...</p>
+       </div>
+     );
+   }
+ 
+   if (!leitura) {
+     return (
+       <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+         <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center">
+           <ArrowLeft className="h-8 w-8 text-muted-foreground" />
+         </div>
+         <div className="space-y-1">
+           <h3 className="text-lg font-semibold">Leitura não encontrada</h3>
+           <p className="text-sm text-muted-foreground">A leitura pode ter sido removida ou você não tem permissão para vê-la.</p>
+         </div>
+         <Button variant="outline" onClick={() => navigate("/leituras")}>
+           Voltar para a lista
+         </Button>
+       </div>
+     );
+   }
 
   const valorAtual = Number(leitura.valor_faturado);
   const variacao = anterior ? ((valorAtual - anterior) / anterior) * 100 : null;
