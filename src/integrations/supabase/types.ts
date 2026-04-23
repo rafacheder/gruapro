@@ -263,6 +263,13 @@ export type Database = {
             referencedRelation: "maquinas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "leituras_usuario_id_profiles_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       manutencoes: {
