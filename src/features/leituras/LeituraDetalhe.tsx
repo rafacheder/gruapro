@@ -183,7 +183,7 @@ export default function LeituraDetalhe() {
            description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
            action={
              <div className="flex gap-2">
-               {leitura.status === 'pendente' && (has_role(role, 'admin') || has_role(role, 'master')) && (
+               {leitura.status === 'pendente' && (role === 'admin' || role === 'master') && (
                  <Button 
                    onClick={() => setPaymentDialogOpen(true)}
                    variant="outline"
