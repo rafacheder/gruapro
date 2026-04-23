@@ -1,3 +1,9 @@
+ import jsPDF from "jspdf";
+ import autoTable from "jspdf-autotable";
+ import QRCode from "qrcode";
+ import { sha256Hex } from "./sha256";
+ import { formatBRL, formatDateTime } from "./format";
+ 
  export interface ConsolidatedLeitura {
    id: string;
    data_leitura: string;
@@ -160,11 +166,6 @@
  
    doc.save(`${docId}.pdf`);
  }
- import jsPDF from "jspdf";
- import autoTable from "jspdf-autotable";
- import QRCode from "qrcode";
- import { sha256Hex } from "./sha256";
- import { formatBRL, formatDateTime } from "./format";
  export async function gerarPdfConsolidadoTermico(
    clienteNome: string,
    data: string,
