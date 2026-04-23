@@ -308,6 +308,10 @@ interface LeituraPdf {
   maquina: { codigo_identificacao: string; modelo?: string | null };
   fotos: string[];
   usuario_nome: string;
+  contador_entrada_atual?: number | null;
+  contador_saida_atual?: number | null;
+  contador_entrada_anterior?: number | null;
+  contador_saida_anterior?: number | null;
 }
 
  export async function gerarPdfLeitura(l: LeituraPdf, type: 'a4' | 'thermal' = 'a4') {
@@ -358,16 +362,30 @@ interface LeituraPdf {
   doc.setFont("helvetica", "bold"); doc.setFontSize(11);
   doc.text(`Data da leitura: ${formatDateTime(l.data_leitura)}`, 14, y); y += 8;
 
+  const hasCounters = l.contador_entrada_atual !== undefined && l.contador_entrada_atual !== null;
+  
+  const tableBody = [
+    ["Valor faturado", formatBRL(l.valor_faturado)],
+    ["Pelúcias saídas", String(l.pelucias_saidas)],
+  ];
+
+  if (hasCounters) {
+    tableBody.unshift(
+      ["Contador Entrada", `${l.contador_entrada_anterior} → ${l.contador_entrada_atual} (${(l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0)})`],
+      ["Contador Saída", `${l.contador_saida_anterior} → ${l.contador_saida_atual} (${(l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0)})`]
+    );
+  }
+
+  tableBody.push(
+    [`Comissão do ponto (${l.percentual_aplicado}%)`, formatBRL(l.valor_comissao)],
+    ["Valor líquido p/ empresa", formatBRL(l.valor_liquido)]
+  );
+
   autoTable(doc, {
     startY: y,
     theme: "grid",
     head: [["Item", "Valor"]],
-    body: [
-      ["Valor faturado", formatBRL(l.valor_faturado)],
-      ["Pelúcias saídas", String(l.pelucias_saidas)],
-      [`Comissão do ponto (${l.percentual_aplicado}%)`, formatBRL(l.valor_comissao)],
-      ["Valor líquido p/ empresa", formatBRL(l.valor_liquido)],
-    ],
+    body: tableBody,
     headStyles: { fillColor: [15, 76, 92] },
     margin: { left: 14, right: 14 },
   });
@@ -467,8 +485,19 @@ interface LeituraPdf {
    y += 8;
    doc.line(2, y, 55, y);
    y += 5;
+
+    const hasCounters = l.contador_entrada_atual !== undefined && l.contador_entrada_atual !== null;
+    if (hasCounters) {
+      doc.setFont("courier", "normal");
+      doc.setFontSize(6);
+      doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, 2, y); y += 3;
+      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, 2, y); y += 4;
+      doc.line(2, y-1, 55, y-1);
+      y += 1;
+    }
    
     doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
    doc.text("Faturado:", 2, y);
    doc.setFont("helvetica", "bold");
    doc.text(formatBRL(l.valor_faturado), 55, y, { align: "right" });
