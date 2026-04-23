@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
- import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, FileText, CheckCircle2, XCircle } from "lucide-react";
+  import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, FileText, CheckCircle2, XCircle, ChevronDown, Printer } from "lucide-react";
+ import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+ } from "@/components/ui/dropdown-menu";
  import { toast } from "sonner";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
@@ -151,26 +157,43 @@ import { calcularVariacao } from "@/utils/reading-calculations";
         description="Histórico de coletas em campo"
          action={
            <div className="flex gap-2">
-             {selectedIds.length > 0 && (
-               <Button 
-                 onClick={() => {
-                   const firstLeitura = items.find(i => i.id === selectedIds[0]);
-                   const sameCliente = selectedIds.every(id => {
-                     const l = items.find(i => i.id === id);
-                     return l?.cliente_id === firstLeitura?.cliente_id;
-                   });
-                   if (!sameCliente) {
-                     toast.error("Todas as leituras selecionadas devem ser do mesmo cliente.");
-                     return;
-                   }
-                   navigate(`/leituras/consolidado?ids=${selectedIds.join(",")}`);
-                 }} 
-                 variant="outline" 
-                 className="border-accent text-accent hover:bg-accent/10"
-               >
-                 <FileText className="h-4 w-4 mr-2" /> Relatório ({selectedIds.length})
-               </Button>
-             )}
+              {selectedIds.length > 0 && (
+                <div className="flex">
+                  <Button 
+                    onClick={() => {
+                      const firstLeitura = items.find(i => i.id === selectedIds[0]);
+                      const sameCliente = selectedIds.every(id => {
+                        const l = items.find(i => i.id === id);
+                        return l?.cliente_id === firstLeitura?.cliente_id;
+                      });
+                      if (!sameCliente) {
+                        toast.error("Todas as leituras selecionadas devem ser do mesmo cliente.");
+                        return;
+                      }
+                      navigate(`/leituras/consolidado?ids=${selectedIds.join(",")}`);
+                    }} 
+                    variant="outline" 
+                    className="border-accent text-accent hover:bg-accent/10 rounded-r-none border-r-0"
+                  >
+                    <FileText className="h-4 w-4 mr-2" /> Relatório ({selectedIds.length})
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="border-accent text-accent hover:bg-accent/10 rounded-l-none px-2 border-l-0">
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => navigate(`/leituras/consolidado?ids=${selectedIds.join(",")}&format=a4`)}>
+                        <FileText className="h-4 w-4 mr-2" /> PDF A4 (Padrão)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate(`/leituras/consolidado?ids=${selectedIds.join(",")}&format=thermal`)}>
+                        <Printer className="h-4 w-4 mr-2" /> PDF Bobina 57mm
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
              <Button onClick={() => navigate("/leituras/nova")} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
                <Plus className="h-4 w-4 mr-2" /> Nova
              </Button>
