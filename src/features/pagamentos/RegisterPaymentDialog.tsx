@@ -67,7 +67,7 @@ export default function RegisterPaymentDialog({
   open,
   onOpenChange,
   onSuccess,
-   initialLeituraId,
+    initialLeituraIds,
    initialClienteId,
 }: RegisterPaymentDialogProps) {
   const [loading, setLoading] = useState(false);
@@ -110,7 +110,7 @@ export default function RegisterPaymentDialog({
          setPendingLeituras([]);
        }
     }
-   }, [open, initialLeituraId, initialClienteId]);
+    }, [open, initialLeituraIds, initialClienteId]);
  
    useEffect(() => {
      if (clienteId) {

@@ -310,7 +310,7 @@ export default function LeituraDetalhe() {
          onSuccess={() => {
            window.location.reload();
          }}
-         initialLeituraId={leitura.id}
+          initialLeituraIds={[leitura.id]}
          initialClienteId={leitura.cliente_id}
        />
 
