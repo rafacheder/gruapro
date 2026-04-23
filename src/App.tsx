@@ -1,3 +1,5 @@
+ import RelatorioConsolidado from "@/features/leituras/RelatorioConsolidado";
+             <Route path="/leituras/consolidado" element={<Shell><RelatorioConsolidado /></Shell>} />
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
