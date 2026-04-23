@@ -5,8 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
 import { formatBRL, formatDateTime } from "@/lib/format";
-import { gerarPdfConsolidado, type ConsolidatedLeitura } from "@/lib/pdf";
-import { ArrowLeft, Download, Loader2, FileText, CheckCircle2 } from "lucide-react";
+ import { gerarPdfConsolidado, gerarPdfConsolidadoTermico, type ConsolidatedLeitura } from "@/lib/pdf";
+ import { ArrowLeft, Download, Loader2, FileText, CheckCircle2, Printer, ChevronDown } from "lucide-react";
+ import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+ } from "@/components/ui/dropdown-menu";
+ import { logAudit } from "@/lib/audit";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -47,33 +54,53 @@ export default function RelatorioConsolidado() {
     load();
   }, [searchParams]);
 
-  const handleDownload = async () => {
-    if (!cliente || leituras.length === 0) return;
-    
-    const formattedLeituras: ConsolidatedLeitura[] = leituras.map(l => ({
-      id: l.id,
-      data_leitura: l.data_leitura,
-      maquina_codigo: l.maquinas?.codigo_identificacao || "—",
-      maquina_modelo: l.maquinas?.modelo,
-      contador_entrada_atual: l.contador_entrada_atual,
-      contador_saida_atual: l.contador_saida_atual,
-      contador_entrada_anterior: l.contador_entrada_anterior,
-      contador_saida_anterior: l.contador_saida_anterior,
-      valor_por_credito: l.valor_por_credito,
-      valor_faturado: Number(l.valor_faturado),
-      valor_comissao: Number(l.valor_comissao),
-      valor_liquido: Number(l.valor_liquido),
-      pelucias_saidas: Number(l.pelucias_saidas),
-    }));
-
-    await gerarPdfConsolidado(
-      cliente.nome_ponto,
-      leituras[0].data_leitura,
-      user?.user_metadata?.full_name || user?.email || "Operador",
-      formattedLeituras
-    );
-    toast.success("PDF gerado com sucesso!");
-  };
+   const getFormattedLeituras = (): ConsolidatedLeitura[] => {
+     return leituras.map(l => ({
+       id: l.id,
+       data_leitura: l.data_leitura,
+       maquina_codigo: l.maquinas?.codigo_identificacao || "—",
+       maquina_modelo: l.maquinas?.modelo,
+       contador_entrada_atual: l.contador_entrada_atual,
+       contador_saida_atual: l.contador_saida_atual,
+       contador_entrada_anterior: l.contador_entrada_anterior,
+       contador_saida_anterior: l.contador_saida_anterior,
+       valor_por_credito: l.valor_por_credito,
+       valor_faturado: Number(l.valor_faturado),
+       valor_comissao: Number(l.valor_comissao),
+       valor_liquido: Number(l.valor_liquido),
+       pelucias_saidas: Number(l.pelucias_saidas),
+     }));
+   };
+ 
+   const handleDownloadA4 = async () => {
+     if (!cliente || leituras.length === 0) return;
+     const formattedLeituras = getFormattedLeituras();
+     await gerarPdfConsolidado(
+       cliente.nome_ponto,
+       leituras[0].data_leitura,
+       user?.user_metadata?.full_name || user?.email || "Operador",
+       formattedLeituras
+     );
+     await logAudit({ acao: "GENERATE_REPORT_A4", tabela: "leituras", registro_id: ids[0], dados_depois: { ids } });
+     toast.success("PDF A4 gerado!");
+   };
+ 
+   const handleDownloadThermal = async () => {
+     if (!cliente || leituras.length === 0) return;
+     const formattedLeituras = getFormattedLeituras();
+     await gerarPdfConsolidadoTermico(
+       cliente.nome_ponto,
+       leituras[0].data_leitura,
+       user?.user_metadata?.full_name || user?.email || "Operador",
+       formattedLeituras
+     );
+     await logAudit({ acao: "GENERATE_REPORT_THERMAL", tabela: "leituras", registro_id: ids[0], dados_depois: { ids } });
+     toast.success("PDF Bobina 57mm gerado!");
+   };
+ 
+   const handlePrint = () => {
+     window.print();
+   };
 
    const { totalGeral, totalComissao, totalLiquido } = useMemo(() => {
      return leituras.reduce((acc, l) => ({
@@ -85,21 +112,154 @@ export default function RelatorioConsolidado() {
  
    if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
 
-  return (
-    <div className="max-w-4xl mx-auto">
+   const { totalEntrada, totalSaida } = useMemo(() => {
+     return leituras.reduce((acc, l) => ({
+       totalEntrada: acc.totalEntrada + ((l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0)),
+       totalSaida: acc.totalSaida + ((l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0)),
+     }), { totalEntrada: 0, totalSaida: 0 });
+   }, [leituras]);
+ 
+   return (
+     <div className="max-w-4xl mx-auto px-4 pb-12">
+       <style>
+         {`
+           @media print {
+             @page {
+               size: 48mm auto;
+               margin: 0;
+             }
+             body * {
+               visibility: hidden;
+             }
+             #thermal-print-area, #thermal-print-area * {
+               visibility: visible;
+             }
+             #thermal-print-area {
+               position: absolute;
+               left: 0;
+               top: 0;
+               width: 48mm;
+               padding: 2mm 4.5mm;
+               font-family: 'Courier New', Courier, monospace;
+               font-size: 8pt;
+               color: black !important;
+               background: white !important;
+             }
+             .no-print {
+               display: none !important;
+             }
+           }
+           #thermal-print-area {
+             display: none;
+           }
+         `}
+       </style>
       <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate("/leituras")}>
         <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
       </Button>
       
-      <PageHeader 
-        title="Relatório Consolidado" 
-        description={cliente?.nome_ponto}
-        action={
-          <Button onClick={handleDownload} className="bg-accent hover:bg-accent/90">
-            <Download className="h-4 w-4 mr-2" /> Baixar PDF
-          </Button>
-        }
-      />
+       <div className="no-print">
+         <PageHeader 
+           title="Relatório Consolidado" 
+           description={cliente?.nome_ponto}
+           action={
+             <div className="flex gap-2">
+               <Button variant="outline" size="sm" onClick={handlePrint} className="hidden md:flex">
+                 <Printer className="h-4 w-4 mr-2" /> Imprimir
+               </Button>
+               <div className="flex">
+                 <Button onClick={handleDownloadA4} className="bg-accent hover:bg-accent/90 rounded-r-none border-r border-accent-foreground/10">
+                   <Download className="h-4 w-4 mr-2" /> Baixar PDF
+                 </Button>
+                 <DropdownMenu>
+                   <DropdownMenuTrigger asChild>
+                     <Button className="bg-accent hover:bg-accent/90 rounded-l-none px-2 h-10">
+                       <ChevronDown className="h-4 w-4" />
+                     </Button>
+                   </DropdownMenuTrigger>
+                   <DropdownMenuContent align="end">
+                     <DropdownMenuItem onClick={handleDownloadA4}>
+                       <FileText className="h-4 w-4 mr-2" /> PDF A4 (Padrão)
+                     </DropdownMenuItem>
+                     <DropdownMenuItem onClick={handleDownloadThermal}>
+                       <Printer className="h-4 w-4 mr-2" /> PDF Bobina 57mm
+                     </DropdownMenuItem>
+                   </DropdownMenuContent>
+                 </DropdownMenu>
+               </div>
+             </div>
+           }
+         />
+       </div>
+ 
+       {/* Thermal Print Area (Hidden in UI, visible during print) */}
+       <div id="thermal-print-area">
+         <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10pt', marginBottom: '2mm' }}>GRUAPRO</div>
+         <div style={{ textAlign: 'center', marginBottom: '2mm' }}>--------------</div>
+         <div>Cliente: {cliente?.nome_ponto}</div>
+         <div>Data: {formatDateTime(leituras[0]?.data_leitura).split(' ')[0]}</div>
+         <div>Operador: {user?.user_metadata?.full_name || user?.email || "Operador"}</div>
+         <div style={{ textAlign: 'center', margin: '3mm 0', fontWeight: 'bold' }}>
+           ================<br />
+           LEITURAS<br />
+           ================
+         </div>
+         {leituras.map((l, i) => (
+           <div key={l.id} style={{ marginBottom: '4mm' }}>
+             <div style={{ fontWeight: 'bold' }}>{i + 1} - {l.maquinas?.codigo_identificacao}</div>
+             <div style={{ whiteSpace: 'pre' }}>  ANT  {String(l.contador_entrada_anterior ?? 0).padStart(5)} {String(l.contador_saida_anterior ?? 0).padStart(5)}</div>
+             <div style={{ whiteSpace: 'pre' }}>  ATU  {String(l.contador_entrada_atual ?? 0).padStart(5)} {String(l.contador_saida_atual ?? 0).padStart(5)}</div>
+             <div style={{ whiteSpace: 'pre' }}>  DIF  {String((l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0)).padStart(5)} {String((l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0)).padStart(5)}</div>
+             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+               <span>  Total</span>
+               <span>{formatBRL(l.valor_faturado)}</span>
+             </div>
+             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+               <span>  Comiss.</span>
+               <span>{formatBRL(l.valor_comissao)}</span>
+             </div>
+             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+               <span>  Receber</span>
+               <span>{formatBRL(l.valor_liquido)}</span>
+             </div>
+             <div style={{ textAlign: 'center', marginTop: '2mm' }}>----------------</div>
+           </div>
+         ))}
+         <div style={{ textAlign: 'center', margin: '3mm 0', fontWeight: 'bold' }}>
+           ================<br />
+           TOTAIS<br />
+           ================
+         </div>
+         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+           <span>Entrada:</span>
+           <span>{totalEntrada}</span>
+         </div>
+         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+           <span>Saida:</span>
+           <span>{totalSaida}</span>
+         </div>
+         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+           <span>Geral:</span>
+           <span>{formatBRL(totalGeral)}</span>
+         </div>
+         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+           <span>Comiss.:</span>
+           <span>{formatBRL(totalComissao)}</span>
+         </div>
+         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+           <span>Saldo:</span>
+           <span>{formatBRL(totalLiquido)}</span>
+         </div>
+         <div style={{ textAlign: 'center', margin: '3mm 0' }}>----------------</div>
+         <div style={{ fontSize: '7pt' }}>
+           Gerado: {formatDateTime(new Date())}<br />
+           Por: {user?.user_metadata?.full_name || user?.email || "Operador"}<br />
+           Doc: REL-{new Date().getFullYear()}-...<br />
+           Sistema v2.0.0
+         </div>
+       </div>
+ 
+       <div className="grid gap-6 no-print">
 
       <div className="grid gap-6">
         <Card className="p-6">
