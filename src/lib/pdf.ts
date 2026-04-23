@@ -160,10 +160,140 @@
  
    doc.save(`${docId}.pdf`);
  }
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
-import { sha256Hex } from "./sha256";
-import { formatBRL, formatDateTime } from "./format";
+ import jsPDF from "jspdf";
+ import autoTable from "jspdf-autotable";
+ import QRCode from "qrcode";
+ import { sha256Hex } from "./sha256";
+ import { formatBRL, formatDateTime } from "./format";
+ export async function gerarPdfConsolidadoTermico(
+   clienteNome: string,
+   data: string,
+   operadorNome: string,
+   leituras: ConsolidatedLeitura[]
+ ) {
+   const doc = new jsPDF({
+     unit: "mm",
+     format: [48, 500], // Start with a long roll, we will crop later if possible or just let it be
+   });
+ 
+   const now = new Date();
+   const docId = `REL-${now.getFullYear()}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
+   
+   let y = 10;
+   const margin = 4.5;
+   const width = 48 - (margin * 2); // Effective width
+   const rightAlignX = 48 - margin;
+ 
+   doc.setFont("courier", "bold");
+   doc.setFontSize(10);
+   doc.text("GRUAPRO", 24, y, { align: "center" });
+   y += 5;
+   doc.setFont("courier", "normal");
+   doc.setFontSize(8);
+   doc.text("--------------", 24, y, { align: "center" });
+   y += 5;
+ 
+   const truncate = (text: string, maxChars: number) => {
+     return text.length > maxChars ? text.substring(0, maxChars - 3) + "..." : text;
+   };
+ 
+   doc.text(`Cliente: ${truncate(clienteNome, 18)}`, margin, y); y += 4;
+   doc.text(`Data: ${formatDateTime(data).split(' ')[0]}`, margin, y); y += 4;
+   doc.text(`Operador: ${truncate(operadorNome, 18)}`, margin, y); y += 6;
+ 
+   doc.setFont("courier", "bold");
+   doc.text("================", 24, y, { align: "center" }); y += 4;
+   doc.text("    LEITURAS    ", 24, y, { align: "center" }); y += 4;
+   doc.text("================", 24, y, { align: "center" }); y += 6;
+ 
+   let totalEntrada = 0;
+   let totalSaida = 0;
+   let totalGeral = 0;
+   let totalComissoes = 0;
+   let totalSaldo = 0;
+ 
+   leituras.forEach((l, index) => {
+     const entradaDelta = (l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0);
+     const saidaDelta = (l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0);
+     
+     totalEntrada += entradaDelta;
+     totalSaida += saidaDelta;
+     totalGeral += l.valor_faturado;
+     totalComissoes += l.valor_comissao;
+     totalSaldo += l.valor_liquido;
+ 
+     doc.setFont("courier", "bold");
+     doc.text(`${index + 1} - ${truncate(l.maquina_codigo, 15)}`, margin, y); y += 4;
+     
+     doc.setFont("courier", "normal");
+     doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, margin, y); y += 4;
+     doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, margin, y); y += 4;
+     doc.text(`  DIF  ${String(entradaDelta).padStart(5)} ${String(saidaDelta).padStart(5)}`, margin, y); y += 4;
+     
+     doc.text("  Total", margin, y);
+     doc.text(formatBRL(l.valor_faturado).padStart(12), rightAlignX, y, { align: "right" }); y += 4;
+     
+     doc.text("  Comiss.", margin, y);
+     doc.text(formatBRL(l.valor_comissao).padStart(12), rightAlignX, y, { align: "right" }); y += 4;
+     
+     doc.text("  Receber", margin, y);
+     doc.text(formatBRL(l.valor_liquido).padStart(12), rightAlignX, y, { align: "right" }); y += 4;
+     
+     doc.text("----------------", 24, y, { align: "center" }); y += 5;
+ 
+     if (y > 450) {
+       doc.addPage([48, 500]);
+       y = 10;
+     }
+   });
+ 
+   y += 2;
+   doc.setFont("courier", "bold");
+   doc.text("================", 24, y, { align: "center" }); y += 4;
+   doc.text("     TOTAIS     ", 24, y, { align: "center" }); y += 4;
+   doc.text("================", 24, y, { align: "center" }); y += 6;
+ 
+   doc.setFont("courier", "normal");
+   doc.text("Entrada:", margin, y);
+   doc.text(String(totalEntrada), rightAlignX, y, { align: "right" }); y += 4;
+   
+   doc.text("Saida:", margin, y);
+   doc.text(String(totalSaida), rightAlignX, y, { align: "right" }); y += 4;
+   
+   doc.text("Geral:", margin, y);
+   doc.text(formatBRL(totalGeral), rightAlignX, y, { align: "right" }); y += 4;
+   
+   doc.text("Comiss.:", margin, y);
+   doc.text(formatBRL(totalComissoes), rightAlignX, y, { align: "right" }); y += 4;
+   
+   doc.setFont("courier", "bold");
+   doc.text("Saldo:", margin, y);
+   doc.text(formatBRL(totalSaldo), rightAlignX, y, { align: "right" }); y += 6;
+ 
+   doc.setFont("courier", "normal");
+   doc.text("----------------", 24, y, { align: "center" }); y += 5;
+   
+   doc.setFontSize(7);
+   const nowStr = formatDateTime(now).split(' ');
+   doc.text(`Gerado: ${nowStr[0]}`, margin, y); y += 3;
+   doc.text(`        ${nowStr[1]}`, margin, y); y += 3;
+   doc.text(`Por: ${truncate(operadorNome, 20)}`, margin, y); y += 3;
+   doc.text(`Doc: ${docId}`, margin, y); y += 3;
+   doc.text(`Sistema v2.0.0`, margin, y); y += 5;
+ 
+   try {
+     const qrUrl = `${window.location.origin}/relatorio/${docId}`;
+     const qrDataUrl = await QRCode.toDataURL(qrUrl, { margin: 1, scale: 2 });
+     doc.addImage(qrDataUrl, "PNG", 14, y, 20, 20);
+     y += 22;
+     doc.text("Consulta online", 24, y, { align: "center" });
+     y += 5;
+   } catch (err) {
+     console.error("Error generating QR Code", err);
+   }
+ 
+   doc.save(`${docId}-Bobina.pdf`);
+ }
 
 interface LeituraPdf {
   id: string;
