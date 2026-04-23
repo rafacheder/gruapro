@@ -12,7 +12,7 @@
  
  export type PeriodType = "mes" | "trimestre" | "ano" | "personalizado";
  
- export function getPeriodDates(period: PeriodType, customRange?: { from: Date; to: Date }) {
+   export function getPeriodDates(period: PeriodType, customRange?: { from: Date; to: Date }): { start: Date; end: Date } {
    const now = new Date();
    
    switch (period) {
@@ -31,8 +31,12 @@
          start: startOfYear(now),
          end: endOfYear(now),
        };
-     case "personalizado":
-       return customRange || { start: startOfMonth(now), end: endOfMonth(now) };
+       case "personalizado": {
+         if (customRange) {
+           return { start: customRange.from, end: customRange.to };
+         }
+         return { start: startOfMonth(now), end: endOfMonth(now) };
+       }
      default:
        return {
          start: startOfMonth(now),
