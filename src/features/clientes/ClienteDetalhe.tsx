@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
-import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2 } from "lucide-react";
+ import { ArrowLeft, Pencil, Trash2, Cpu, ClipboardList, Loader2, FileText } from "lucide-react";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
