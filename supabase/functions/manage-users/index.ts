@@ -51,15 +51,9 @@ serve(async (req) => {
         user_metadata: { nome_completo }
       })
 
-      if (createError) throw createError
-
-      // Add default role 'usuario' if none specified
-      await adminClient.from('user_roles').insert({
-        user_id: newUser.user.id,
-        role: 'usuario'
-      })
-
-      return new Response(JSON.stringify(newUser), {
+       if (createError) throw createError
+ 
+       return new Response(JSON.stringify(newUser), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })
