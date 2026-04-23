@@ -67,8 +67,8 @@ export async function syncPendingLeituras() {
         .equals(leitura.tempId)
         .toArray();
 
-      for (let i = 0; i < fotos.length; i++) {
-        const foto = fotos[i];
+      // Parallelize photo uploads for efficiency
+      const uploadPromises = fotos.map(async (foto, i) => {
         const path = `${inserted.id}/${i + 1}-${Date.now()}.jpg`;
         
         const { error: upErr } = await supabase.storage
@@ -76,20 +76,25 @@ export async function syncPendingLeituras() {
           .upload(path, foto.blob, { contentType: 'image/jpeg' });
           
         if (upErr) {
-          console.error('Error uploading photo during sync:', upErr);
-          continue;
+          throw new Error(`Erro ao enviar foto ${i + 1}: ${upErr.message}`);
         }
 
         const { data: pub } = supabase.storage
           .from('leitura-fotos')
           .getPublicUrl(path);
 
-        await supabase.from('leitura_fotos').insert({
+        const { error: dbErr } = await supabase.from('leitura_fotos').insert({
           leitura_id: inserted.id,
           foto_url: pub.publicUrl,
           ordem: i + 1,
         });
-      }
+
+        if (dbErr) throw dbErr;
+      });
+
+      // Use allSettled or catch individual errors if we want partial success, 
+      // but for sync it's safer to either succeed or stay in 'error' status.
+      await Promise.all(uploadPromises);
 
       await logAudit({
         acao: 'CREATE_LEITURA',
