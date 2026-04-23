@@ -40,10 +40,26 @@ export default function PagamentosList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [clientes, setClientes] = useState<{ id: string; nome_ponto: string }[]>([]);
 
-  useEffect(() => {
-    loadData();
-    loadClientes();
-  }, []);
+   useEffect(() => {
+     loadData();
+     loadClientes();
+ 
+     // Realtime subscription to reflect changes immediately
+     const channel = supabase
+       .channel("pagamentos_changes")
+       .on(
+         "postgres_changes",
+         { event: "*", schema: "public", table: "pagamentos" },
+         () => {
+           loadData();
+         }
+       )
+       .subscribe();
+ 
+     return () => {
+       supabase.removeChannel(channel);
+     };
+   }, []);
 
   async function loadClientes() {
     const { data } = await supabase.from("clientes").select("id, nome_ponto").order("nome_ponto");
