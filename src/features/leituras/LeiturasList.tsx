@@ -67,13 +67,6 @@ import { calcularVariacao } from "@/utils/reading-calculations";
 
     const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams(searchParams));
 
-    useEffect(() => {
-      const newFilters = getFiltersFromSearchParams(searchParams);
-      if (JSON.stringify(newFilters) !== JSON.stringify(filters)) {
-        setFilters(newFilters);
-      }
-    }, [searchParams, filters, getFiltersFromSearchParams]);
-
     const fetchData = useCallback(async (isLoadMore = false) => {
       if (!isLoadMore) {
         setLoading(true);
@@ -124,26 +117,21 @@ import { calcularVariacao } from "@/utils/reading-calculations";
     }, [filters, page, items.length]);
 
     useEffect(() => {
-      const timeout = setTimeout(() => {
-        fetchData();
-        
-        // Update URL
-        const params: Record<string, string> = {};
-        if (filters.clienteId) params.cliente = filters.clienteId;
-        if (filters.maquinaId) params.maquina = filters.maquinaId;
-        if (filters.status !== "all") params.status = filters.status;
-        if (filters.operadorId !== "all") params.operador = filters.operadorId;
-        if (filters.startDate) params.inicio = filters.startDate.toISOString();
-        if (filters.endDate) params.fim = filters.endDate.toISOString();
-        
-        // Only update if different to avoid infinite loops
-        const currentParams = Object.fromEntries(searchParams.entries());
-        if (JSON.stringify(params) !== JSON.stringify(currentParams)) {
-          setSearchParams(params);
-        }
-      }, 300);
-
-      return () => clearTimeout(timeout);
+      fetchData();
+      
+      // Update URL immediately when filters change
+      const params: Record<string, string> = {};
+      if (filters.clienteId) params.cliente = filters.clienteId;
+      if (filters.maquinaId) params.maquina = filters.maquinaId;
+      if (filters.status !== "all") params.status = filters.status;
+      if (filters.operadorId !== "all") params.operador = filters.operadorId;
+      if (filters.startDate) params.inicio = filters.startDate.toISOString();
+      if (filters.endDate) params.fim = filters.endDate.toISOString();
+      
+      const currentParams = Object.fromEntries(searchParams.entries());
+      if (JSON.stringify(params) !== JSON.stringify(currentParams)) {
+        setSearchParams(params, { replace: true });
+      }
     }, [filters, fetchData, searchParams, setSearchParams]);
 
   return (
