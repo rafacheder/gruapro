@@ -50,14 +50,14 @@ export default function ExtratosView() {
         .eq("id", selectedCliente)
         .single();
 
-      // Leituras
-      const { data: leituras } = await supabase
-        .from("leituras")
-        .select("*, maquinas(codigo_identificacao)")
-        .eq("cliente_id", selectedCliente)
-        .gte("data_leitura", startDate)
-        .lte("data_leitura", endDate)
-        .order("data_leitura");
+       // Leituras (including status)
+       const { data: leituras } = await supabase
+         .from("leituras")
+         .select("*, maquinas(codigo_identificacao)")
+         .eq("cliente_id", selectedCliente)
+         .gte("data_leitura", startDate)
+         .lte("data_leitura", endDate)
+         .order("data_leitura");
 
       // Pagamentos
       const { data: pagamentos } = await supabase
@@ -69,20 +69,22 @@ export default function ExtratosView() {
         .order("data_pagamento");
 
       const totalFaturado = leituras?.reduce((acc, l) => acc + Number(l.valor_faturado), 0) || 0;
-      const totalComissao = leituras?.reduce((acc, l) => acc + Number(l.valor_comissao), 0) || 0;
+       const totalComissao = leituras?.reduce((acc, l) => acc + Number(l.valor_comissao), 0) || 0;
+       const totalPendente = leituras?.filter(l => l.status === 'pendente').reduce((acc, l) => acc + Number(l.valor_comissao), 0) || 0;
       const totalPago = pagamentos?.reduce((acc, p) => acc + Number(p.valor), 0) || 0;
       const saldo = totalComissao - totalPago;
 
-      setPreviewData({
-        cliente,
-        leituras,
-        pagamentos,
-        summary: {
-          totalFaturado,
-          totalComissao,
-          totalPago,
-          saldo
-        },
+       setPreviewData({
+         cliente,
+         leituras,
+         pagamentos,
+         summary: {
+           totalFaturado,
+           totalComissao,
+           totalPago,
+           totalPendente,
+           saldo
+         },
         period: {
           month,
           year
@@ -132,18 +134,18 @@ export default function ExtratosView() {
     doc.setFont("helvetica", "bold");
     doc.text("Relatório de Leituras", 14, 80);
     
-    const leiturasRows = leituras.map((l: any) => [
-      formatDate(l.data_leitura),
-      l.maquinas?.codigo_identificacao || "—",
-      formatBRL(l.valor_faturado),
-      l.pelucias_saidas,
-      formatPercent(l.percentual_aplicado),
-      formatBRL(l.valor_comissao)
-    ]);
+     const leiturasRows = leituras.map((l: any) => [
+       formatDate(l.data_leitura),
+       l.maquinas?.codigo_identificacao || "—",
+       formatBRL(l.valor_faturado),
+       l.pelucias_saidas,
+       l.status === 'pago' ? 'Pago' : 'Pendente',
+       formatBRL(l.valor_comissao)
+     ]);
 
     autoTable(doc, {
       startY: 85,
-      head: [["Data", "Máquina", "Faturado", "Pelúcias", "% Aplic.", "Comissão"]],
+       head: [["Data", "Máquina", "Faturado", "Pelúcias", "Status", "Comissão"]],
       body: leiturasRows,
       theme: "striped",
       headStyles: { fillColor: [139, 92, 246] }
@@ -191,8 +193,12 @@ export default function ExtratosView() {
     
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text(`Saldo a Pagar/Receber:`, 14, summaryY + 34);
-    doc.text(formatBRL(summary.saldo), 70, summaryY + 34);
+     doc.text(`Comissões pendentes:`, 14, summaryY + 34);
+     doc.text(formatBRL(summary.totalPendente), 70, summaryY + 34);
+ 
+     doc.setFontSize(12);
+     doc.text(`Saldo a Pagar/Receber:`, 14, summaryY + 44);
+     doc.text(formatBRL(summary.saldo), 70, summaryY + 44);
 
     // Footer
     const pageCount = (doc as any).internal.getNumberOfPages();
