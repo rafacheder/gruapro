@@ -26,21 +26,23 @@ export default function ClienteDetalhe() {
   const [cliente, setCliente] = useState<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [maquinas, setMaquinas] = useState<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [leituras, setLeituras] = useState<any[]>([]);
+   const [leituras, setLeituras] = useState<any[]>([]);
+   const [totalPago, setTotalPago] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const [{ data: cli }, { data: maq }, { data: lei }] = await Promise.all([
+       const [{ data: cli }, { data: maq }, { data: lei }, { data: pag }] = await Promise.all([
         supabase.from("clientes").select("*").eq("id", id).maybeSingle(),
         supabase.from("maquinas").select("id, codigo_identificacao, modelo, status").eq("cliente_id", id),
         supabase.from("leituras").select("id, data_leitura, valor_faturado, valor_comissao, valor_liquido, status").eq("cliente_id", id).order("data_leitura", { ascending: false }).limit(20),
+         supabase.from("pagamentos").select("valor").eq("cliente_id", id),
       ]);
       setCliente(cli);
       setMaquinas(maq || []);
       setLeituras(lei || []);
+       setTotalPago(pag?.reduce((acc, p) => acc + Number(p.valor), 0) || 0);
       setLoading(false);
     };
     load();
@@ -62,7 +64,7 @@ export default function ClienteDetalhe() {
   if (!cliente) return <div>Cliente não encontrado</div>;
 
   const totalComissaoPendente = leituras
-    .filter((l) => l.status === "pendente_pagamento")
+    .filter((l) => l.status === "pendente")
     .reduce((s, l) => s + Number(l.valor_comissao), 0);
 
   return (
@@ -118,12 +120,18 @@ export default function ClienteDetalhe() {
             {showFinancials && <>Comissão: <span className="text-accent font-semibold">{cliente.percentual_comissao}%</span><br /></>}
             Status: <Badge variant={cliente.ativo ? "default" : "secondary"}>{cliente.ativo ? "Ativo" : "Inativo"}</Badge>
           </p>
-          {showFinancials && (
-            <div className="mt-3 pt-3 border-t border-border">
-              <div className="text-xs text-muted-foreground">Saldo devedor (comissões pendentes)</div>
-              <div className="text-2xl font-bold text-accent">{formatBRL(totalComissaoPendente)}</div>
-            </div>
-          )}
+       {showFinancials && (
+         <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-4">
+           <div>
+             <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">A receber (pendente)</div>
+             <div className="text-xl font-bold text-warning">{formatBRL(totalComissaoPendente)}</div>
+           </div>
+           <div>
+             <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">Total pago (histórico)</div>
+             <div className="text-xl font-bold text-success">{formatBRL(totalPago)}</div>
+           </div>
+         </div>
+       )}
         </Card>
       </div>
 

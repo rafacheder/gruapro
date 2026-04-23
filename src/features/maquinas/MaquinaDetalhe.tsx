@@ -198,7 +198,7 @@ export default function MaquinaDetalhe() {
                       <div className="text-sm font-semibold text-accent">{formatBRL(l.valor_comissao)}</div>
                     </div>
                   )}
-                  <Badge variant={l.status === "pago" ? "default" : "secondary"}>{l.status === "pendente_pagamento" ? "pendente" : l.status}</Badge>
+                  <Badge variant={l.status === "pago" ? "default" : "secondary"}>{l.status === "pendente" ? "pendente" : l.status}</Badge>
                 </div>
               </Card>
             </Link>

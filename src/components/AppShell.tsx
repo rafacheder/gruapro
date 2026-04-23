@@ -18,7 +18,8 @@ const navItems = [
   { to: "/pagamentos", label: "Pagamentos", icon: CreditCard, roles: ["master", "admin"] as const },
   { to: "/extratos", label: "Extratos", icon: FileText, roles: ["master", "admin"] as const },
   { to: "/usuarios", label: "Usuários", icon: Shield, roles: ["master", "admin"] as const },
-  { to: "/audit", label: "Audit log", icon: ScrollText, roles: ["master"] as const },
+   { to: "/audit", label: "Audit log", icon: ScrollText, roles: ["master"] as const },
+   { to: "/reconciliar", label: "Reconciliação", icon: ClipboardList, roles: ["master"] as const },
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {

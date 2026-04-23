@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState } from "react";
+ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -133,8 +134,9 @@ export default function PagamentosList() {
         />
       ) : (
         <div className="grid gap-3">
-          {filtered.map((p) => (
-            <Card key={p.id} className="p-4 bg-card border-border">
+           {filtered.map((p) => (
+             <Link key={p.id} to={`/pagamentos/${p.id}`}>
+               <Card className="p-4 bg-card border-border hover:border-accent transition-colors cursor-pointer">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <h3 className="font-semibold text-foreground">{p.clientes.nome_ponto}</h3>
@@ -149,14 +151,13 @@ export default function PagamentosList() {
                 </div>
                 <div className="text-right flex flex-col items-end gap-2">
                   <div className="text-lg font-bold text-accent">{formatBRL(p.valor)}</div>
-                  {p.comprovante_url && (
-                    <Button variant="ghost" size="sm" onClick={() => handleDownloadComprovante(p.comprovante_url!)} className="h-7 text-xs">
-                      <FileDown className="h-4 w-4 mr-1" /> Comprovante
-                    </Button>
-                  )}
+                   {p.comprovante_url && (
+                     <Badge variant="outline" className="text-[10px] py-0 h-4">Comprovante</Badge>
+                   )}
                 </div>
               </div>
             </Card>
+             </Link>
           ))}
         </div>
       )}

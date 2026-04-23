@@ -243,7 +243,7 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
              valor_liquido: liquido,
              percentual_aplicado: percentual,
              observacoes: observacoes || null,
-             status: "pendente_pagamento",
+             status: "pendente",
            })
            .select("id")
            .single();
