@@ -1,5 +1,5 @@
- import { useEffect, useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+ import { useEffect, useState, useMemo, useCallback } from "react";
+ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,17 +11,15 @@ import EmptyState from "@/components/EmptyState";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
 import { calcularVariacao } from "@/utils/reading-calculations";
-import { 
-  Tabs, 
-  TabsList, 
-   TabsTrigger 
- } from "@/components/ui/tabs";
+ import { ReadingFilters, FilterState } from "./components/ReadingFilters";
+ import { startOfMonth, endOfDay, parseISO } from "date-fns";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import RegisterPaymentDialog from "../pagamentos/RegisterPaymentDialog";
  
  export default function LeiturasList() {
-   const navigate = useNavigate();
-   const { role } = useAuth();
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { role } = useAuth();
    const [selectedIds, setSelectedIds] = useState<string[]>([]);
    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
    const [batchSelection, setBatchSelection] = useState<{ids: string[], clienteId: string} | null>(null);
@@ -50,37 +48,103 @@ import {
      
      return { valid: true, error: null, clienteId: firstClienteId };
    }, [selectedItems, selectedIds]);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [page, setPage] = useState(0);
+    const PAGE_SIZE = 50;
 
-  useEffect(() => {
-    supabase
-      .from("vw_leituras_com_anterior")
-      .select("*, maquinas(codigo_identificacao), clientes(nome_ponto)")
-      .order("data_leitura", { ascending: false })
-      .limit(100)
-      .then(({ data }) => {
-        const mapped = (data || []).map(l => {
-          const variacao = l.data_leitura_previa ? calcularVariacao(
-            { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
-            { 
-              valor_faturado: Number(l.valor_faturado_previo), 
-              pelucias_saidas: l.pelucias_saidas_previa, 
-              data_leitura: l.data_leitura_previa,
-              data_leitura_previa: l.data_leitura_pre_previa
-            }
-          ) : null;
-          return { ...l, variacao };
-        });
-         setItems(mapped);
-         setLoading(false);
+    const getFiltersFromSearchParams = useCallback((params: URLSearchParams): FilterState => {
+      return {
+        clienteId: params.get("cliente") || "",
+        maquinaId: params.get("maquina") || "",
+        status: params.get("status") || "all",
+        startDate: params.get("inicio") ? parseISO(params.get("inicio")!) : startOfMonth(new Date()),
+        endDate: params.get("fim") ? parseISO(params.get("fim")!) : new Date(),
+        operadorId: params.get("operador") || "all"
+      };
+    }, []);
+
+    const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams(searchParams));
+
+    useEffect(() => {
+      const newFilters = getFiltersFromSearchParams(searchParams);
+      if (JSON.stringify(newFilters) !== JSON.stringify(filters)) {
+        setFilters(newFilters);
+      }
+    }, [searchParams, filters, getFiltersFromSearchParams]);
+
+    const fetchData = useCallback(async (isLoadMore = false) => {
+      if (!isLoadMore) {
+        setLoading(true);
+        setPage(0);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const currentPage = isLoadMore ? page + 1 : 0;
+      let query = supabase
+        .from("vw_leituras_com_anterior")
+        .select("*, maquinas(codigo_identificacao), clientes(nome_ponto)", { count: 'exact' });
+
+      if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
+      if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
+       if (filters.status !== "all") query = query.eq("status", filters.status as any);
+      if (filters.operadorId !== "all") query = query.eq("usuario_id", filters.operadorId);
+      if (filters.startDate) query = query.gte("data_leitura", filters.startDate.toISOString());
+      if (filters.endDate) query = query.lte("data_leitura", endOfDay(filters.endDate).toISOString());
+
+      const { data, count } = await query
+        .order("data_leitura", { ascending: false })
+        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+
+      const mapped = (data || []).map(l => {
+        const variacao = l.data_leitura_previa ? calcularVariacao(
+          { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+          { 
+            valor_faturado: Number(l.valor_faturado_previo), 
+            pelucias_saidas: l.pelucias_saidas_previa, 
+            data_leitura: l.data_leitura_previa,
+            data_leitura_previa: l.data_leitura_pre_previa
+          }
+        ) : null;
+        return { ...l, variacao };
       });
-  }, []);
 
-   const filteredItems = useMemo(() => {
-     if (statusFilter === "all") return items;
-     return items.filter(i => i.status === statusFilter);
-   }, [statusFilter, items]);
+      if (isLoadMore) {
+        setItems(prev => [...prev, ...mapped]);
+        setPage(currentPage);
+      } else {
+        setItems(mapped);
+      }
+
+      setHasMore(count ? (isLoadMore ? items.length + mapped.length : mapped.length) < count : false);
+      setLoading(false);
+      setLoadingMore(false);
+    }, [filters, page, items.length]);
+
+    useEffect(() => {
+      const timeout = setTimeout(() => {
+        fetchData();
+        
+        // Update URL
+        const params: Record<string, string> = {};
+        if (filters.clienteId) params.cliente = filters.clienteId;
+        if (filters.maquinaId) params.maquina = filters.maquinaId;
+        if (filters.status !== "all") params.status = filters.status;
+        if (filters.operadorId !== "all") params.operador = filters.operadorId;
+        if (filters.startDate) params.inicio = filters.startDate.toISOString();
+        if (filters.endDate) params.fim = filters.endDate.toISOString();
+        
+        // Only update if different to avoid infinite loops
+        const currentParams = Object.fromEntries(searchParams.entries());
+        if (JSON.stringify(params) !== JSON.stringify(currentParams)) {
+          setSearchParams(params);
+        }
+      }, 300);
+
+      return () => clearTimeout(timeout);
+    }, [filters, fetchData, searchParams, setSearchParams]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -114,26 +178,30 @@ import {
              </Button>
            </div>
          }
-      />
+       />
+ 
+       <ReadingFilters 
+         filters={filters} 
+         onFiltersChange={setFilters} 
+         onClearFilters={() => setFilters({
+           clienteId: "",
+           maquinaId: "",
+           status: "all",
+           startDate: startOfMonth(new Date()),
+           endDate: new Date(),
+           operadorId: "all"
+         })}
+       />
 
-      <Tabs defaultValue="all" className="w-full" onValueChange={setStatusFilter}>
-        <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
-          <TabsTrigger value="all" className="text-xs">Todas</TabsTrigger>
-          <TabsTrigger value="pendente" className="text-xs">Pendentes</TabsTrigger>
-          <TabsTrigger value="pago" className="text-xs">Pagas</TabsTrigger>
-          <TabsTrigger value="cancelado" className="text-xs">Canceladas</TabsTrigger>
-        </TabsList>
-      </Tabs>
-
-      {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
-      ) : filteredItems.length === 0 ? (
+       {loading && page === 0 ? (
+         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
+       ) : items.length === 0 ? (
         <EmptyState
           icon={ClipboardList}
-          title="Nenhuma leitura encontrada"
-          description={statusFilter === 'all' ? "Faça a primeira leitura para começar." : "Nenhuma leitura com este status."}
+           title="Nenhuma leitura encontrada"
+           description={filters.status === 'all' ? "Faça a primeira leitura para começar." : "Nenhuma leitura com este status."}
           action={
-            statusFilter === 'all' ? (
+             filters.status === 'all' ? (
               <Button onClick={() => navigate("/leituras/nova")} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 <Plus className="h-4 w-4 mr-2" /> Nova leitura
               </Button>
@@ -141,8 +209,9 @@ import {
           }
         />
       ) : (
-        <div className="space-y-2">
-           {filteredItems.map((l) => (
+         <div className="space-y-4">
+           <div className="space-y-2">
+            {items.map((l) => (
              <div key={l.id} className="relative flex items-center gap-2">
                 {isAdmin && (
                   <input 
@@ -219,8 +288,25 @@ import {
                </Card>
                </Link>
              </div>
-          ))}
-       </div>
+            ))}
+          </div>
+
+          {hasMore && (
+            <div className="flex justify-center pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => fetchData(true)} 
+                disabled={loadingMore}
+                className="w-full sm:w-auto"
+              >
+                {loadingMore ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Carregar mais
+              </Button>
+            </div>
+          )}
+        </div>
       )}
 
       {isAdmin && selectedIds.length > 0 && (
