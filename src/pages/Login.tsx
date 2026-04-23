@@ -75,7 +75,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                 autoComplete="current-password"
               />
             </div>
              <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={submitting}>
