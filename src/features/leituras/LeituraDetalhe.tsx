@@ -177,18 +177,37 @@ export default function LeituraDetalhe() {
       <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate("/leituras")}>
         <ArrowLeft className="h-4 w-4 mr-1" /> Leituras
       </Button>
-      <PageHeader
-        title={leitura.clientes?.nome_ponto}
-        description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
-        action={
-          <Button onClick={handlePdf} disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
-            {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-            PDF
-          </Button>
-        }
-      />
+       <div className="flex flex-col gap-4">
+         <PageHeader
+           title={leitura.clientes?.nome_ponto}
+           description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
+           action={
+             <div className="flex gap-2">
+               {leitura.status === 'pendente' && (has_role(role, 'admin') || has_role(role, 'master')) && (
+                 <Button 
+                   onClick={() => setPaymentDialogOpen(true)}
+                   variant="outline"
+                   className="border-success text-success hover:bg-success hover:text-white"
+                 >
+                   <CheckCircle2 className="h-4 w-4 mr-2" />
+                   Marcar como pago
+                 </Button>
+               )}
+               <Button onClick={handlePdf} disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
+                 {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                 PDF
+               </Button>
+             </div>
+           }
+         />
 
-      <Card className="p-5 bg-card mb-4 space-y-3">
+       <Card className="p-5 bg-card mb-4 space-y-3 relative overflow-hidden">
+         <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+           leitura.status === 'pago' ? 'bg-success' : 
+           leitura.status === 'pendente' ? 'bg-warning' : 
+           'bg-muted'
+         }`} />
+         
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-sm">Valor faturado</span>
           <span className="text-xl font-bold">{formatBRL(valorAtual)}</span>
@@ -209,12 +228,52 @@ export default function LeituraDetalhe() {
             </div>
           </>
         )}
-        <div className="flex items-center justify-between pt-2">
-          <Badge variant={leitura.status === "pago" ? "default" : "secondary"}>
-            {leitura.status === "pendente" ? "Pendente" : leitura.status}
-          </Badge>
-        </div>
+         <div className="flex flex-col gap-3 pt-2">
+           <div className="flex items-center justify-between">
+             <Badge 
+               className={`${
+                 leitura.status === 'pago' ? 'bg-success hover:bg-success/90' : 
+                 leitura.status === 'pendente' ? 'bg-warning hover:bg-warning/90' : 
+                 ''
+               }`}
+             >
+               {leitura.status === "pendente" ? "Pendente" : (
+                 <span className="flex items-center gap-1">
+                   {leitura.status === "pago" && <CheckCircle2 className="h-3 w-3" />}
+                   {leitura.status}
+                 </span>
+               )}
+             </Badge>
+           </div>
+ 
+           {leitura.status === 'pago' && pagamentoInfo && (
+             <div className="bg-success/5 border border-success/20 rounded-lg p-3 mt-1">
+               <div className="flex items-center gap-2 text-success text-sm font-medium mb-1">
+                 <CheckCircle2 className="h-4 w-4" />
+                 Pago em {formatDateTime(pagamentoInfo.data_pagamento)} via {pagamentoInfo.forma_pagamento}
+               </div>
+               <Link 
+                 to={`/pagamentos/${pagamentoInfo.id}`}
+                 className="text-xs text-accent hover:underline flex items-center gap-1"
+               >
+                 <ExternalLink className="h-3 w-3" />
+                 Ver detalhes do pagamento
+               </Link>
+             </div>
+           )}
+         </div>
       </Card>
+       </div>
+ 
+       <RegisterPaymentDialog 
+         open={paymentDialogOpen}
+         onOpenChange={setPaymentDialogOpen}
+         onSuccess={() => {
+           window.location.reload();
+         }}
+         initialLeituraId={leitura.id}
+         initialClienteId={leitura.cliente_id}
+       />
 
       {variacaoResult && (
         <Card className="p-5 bg-card mb-4 border-l-4 border-l-accent">
