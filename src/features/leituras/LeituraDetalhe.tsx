@@ -8,7 +8,8 @@ import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
  import { 
    ArrowLeft, 
-   FileDown, 
+    FileDown,
+    Printer,
    Loader2, 
    TrendingDown, 
    TrendingUp, 
@@ -19,7 +20,13 @@ import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
    CreditCard,
    ExternalLink
  } from "lucide-react";
-import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
+ import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
+ import {
+   DropdownMenu,
+   DropdownMenuContent,
+   DropdownMenuItem,
+   DropdownMenuTrigger,
+ } from "@/components/ui/dropdown-menu";
 import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
 import { gerarPdfLeitura } from "@/lib/pdf";
 import { logAudit } from "@/lib/audit";
@@ -111,38 +118,38 @@ export default function LeituraDetalhe() {
      }
    }, [id]);
 
-  const handlePdf = async () => {
-    if (!leitura) return;
-    setGenerating(true);
-    try {
-      const { docId, hash } = await gerarPdfLeitura({
-        id: leitura.id,
-        data_leitura: leitura.data_leitura,
-        valor_faturado: Number(leitura.valor_faturado),
-        pelucias_saidas: leitura.pelucias_saidas,
-        valor_comissao: Number(leitura.valor_comissao),
-        valor_liquido: Number(leitura.valor_liquido),
-        percentual_aplicado: Number(leitura.percentual_aplicado),
-        observacoes: leitura.observacoes,
-        cliente: leitura.clientes,
-        maquina: leitura.maquinas,
-        fotos: fotos.map((f) => f.foto_url),
-        usuario_nome: nome || "Usuário",
-      });
-      await logAudit({
-        acao: "GENERATE_PDF_LEITURA",
-        tabela: "leituras",
-        registro_id: leitura.id,
-        dados_depois: { docId, hash },
-      });
-      toast.success("PDF gerado");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao gerar PDF");
-    } finally {
-      setGenerating(false);
-    }
-  };
+   const handlePdf = async (type: 'a4' | 'thermal' = 'a4') => {
+     if (!leitura) return;
+     setGenerating(true);
+     try {
+       const { docId, hash } = await gerarPdfLeitura({
+         id: leitura.id,
+         data_leitura: leitura.data_leitura,
+         valor_faturado: Number(leitura.valor_faturado),
+         pelucias_saidas: leitura.pelucias_saidas,
+         valor_comissao: Number(leitura.valor_comissao),
+         valor_liquido: Number(leitura.valor_liquido),
+         percentual_aplicado: Number(leitura.percentual_aplicado),
+         observacoes: leitura.observacoes,
+         cliente: leitura.clientes,
+         maquina: leitura.maquinas,
+         fotos: fotos.map((f) => f.foto_url),
+         usuario_nome: nome || "Usuário",
+       }, type);
+       await logAudit({
+         acao: type === 'a4' ? "GENERATE_PDF_LEITURA" : "GENERATE_PDF_LEITURA_THERMAL",
+         tabela: "leituras",
+         registro_id: leitura.id,
+         dados_depois: { docId, hash },
+       });
+       toast.success(type === 'a4' ? "PDF A4 gerado" : "PDF Térmico gerado");
+     } catch (err) {
+       console.error(err);
+       toast.error("Erro ao gerar PDF");
+     } finally {
+       setGenerating(false);
+     }
+   };
 
    if (loading) {
      return (
@@ -193,10 +200,24 @@ export default function LeituraDetalhe() {
                    Marcar como pago
                  </Button>
                )}
-               <Button onClick={handlePdf} disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
-                 {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-                 PDF
-               </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
+                      {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                      Exportar
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handlePdf('a4')}>
+                      <FileDown className="h-4 w-4 mr-2" />
+                      PDF (A4)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePdf('thermal')}>
+                      <Printer className="h-4 w-4 mr-2" />
+                      Bobina Térmica (57mm)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
              </div>
            }
          />

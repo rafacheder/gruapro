@@ -18,8 +18,12 @@ interface LeituraPdf {
   usuario_nome: string;
 }
 
-export async function gerarPdfLeitura(l: LeituraPdf) {
-  const doc = new jsPDF();
+ export async function gerarPdfLeitura(l: LeituraPdf, type: 'a4' | 'thermal' = 'a4') {
+   if (type === 'thermal') {
+     return gerarPdfLeituraTermico(l);
+   }
+ 
+   const doc = new jsPDF();
   const now = new Date();
   const docId = `LEI-${l.id.slice(0, 8).toUpperCase()}-${now.getFullYear()}`;
   const payload = JSON.stringify({
@@ -117,9 +121,94 @@ export async function gerarPdfLeitura(l: LeituraPdf) {
     );
   }
 
-  doc.save(`leitura-${docId}.pdf`);
-  return { docId, hash };
-}
+   doc.save(`leitura-${docId}-A4.pdf`);
+   return { docId, hash };
+ }
+ 
+ export async function gerarPdfLeituraTermico(l: LeituraPdf) {
+   // 57mm width, 100mm height (initially, can be dynamic if needed but user said 10cm)
+   const doc = new jsPDF({
+     unit: "mm",
+     format: [57, 100],
+   });
+ 
+   const now = new Date();
+   const docId = `LEI-${l.id.slice(0, 8).toUpperCase()}-${now.getFullYear()}`;
+   const payload = JSON.stringify({
+     id: l.id,
+     valor: l.valor_faturado,
+     comissao: l.valor_comissao,
+     pct: l.percentual_aplicado,
+     geradoEm: now.toISOString(),
+     geradoPor: l.usuario_nome,
+   });
+   const hash = await sha256Hex(payload);
+ 
+   // Compact design for thermal paper
+   doc.setFontSize(10);
+   doc.setFont("helvetica", "bold");
+   doc.text("GruaPro", 28.5, 8, { align: "center" });
+   
+   doc.setFontSize(8);
+   doc.text("Relatório de Leitura", 28.5, 12, { align: "center" });
+   
+   doc.setFont("helvetica", "normal");
+   doc.setFontSize(7);
+   doc.text(`Doc: ${docId}`, 2, 18);
+   doc.text(`Data: ${formatDateTime(l.data_leitura)}`, 2, 22);
+   
+   doc.line(2, 24, 55, 24);
+   
+   doc.setFont("helvetica", "bold");
+   doc.text("Cliente:", 2, 28);
+   doc.setFont("helvetica", "normal");
+   const clienteLines = doc.splitTextToSize(`${l.cliente.nome_ponto}`, 53);
+   doc.text(clienteLines, 2, 31);
+   
+   let y = 31 + (clienteLines.length * 3);
+   
+   doc.setFont("helvetica", "bold");
+   doc.text("Máquina:", 2, y + 2);
+   doc.setFont("helvetica", "normal");
+   doc.text(`${l.maquina.codigo_identificacao}`, 2, y + 5);
+   
+   y += 8;
+   doc.line(2, y, 55, y);
+   y += 5;
+   
+   doc.setFontSize(8);
+   doc.text("Faturado:", 2, y);
+   doc.setFont("helvetica", "bold");
+   doc.text(formatBRL(l.valor_faturado), 55, y, { align: "right" });
+   
+   y += 4;
+   doc.setFont("helvetica", "normal");
+   doc.text("Saídas:", 2, y);
+   doc.text(String(l.pelucias_saidas), 55, y, { align: "right" });
+   
+   y += 4;
+   doc.text(`Comissão (${l.percentual_aplicado}%):`, 2, y);
+   doc.text(formatBRL(l.valor_comissao), 55, y, { align: "right" });
+   
+   y += 5;
+   doc.setFontSize(9);
+   doc.text("LÍQUIDO:", 2, y);
+   doc.setFont("helvetica", "bold");
+   doc.text(formatBRL(l.valor_liquido), 55, y, { align: "right" });
+   
+   y += 7;
+   doc.line(2, y, 55, y);
+   y += 4;
+   
+   doc.setFontSize(6);
+   doc.setFont("helvetica", "normal");
+   doc.text(`SHA-256: ${hash.slice(0, 16)}...`, 2, y);
+   doc.text(`Gerado por ${l.usuario_nome}`, 2, y + 3);
+   doc.text(`${formatDateTime(now)}`, 2, y + 6);
+ 
+    doc.save(`leitura-${docId}-Termico.pdf`);
+    return { docId, hash };
+ }
 
 async function fetchAsDataURL(url: string): Promise<string> {
   const res = await fetch(url);
