@@ -7,9 +7,11 @@
    cliente_id: string;
    leitura_anterior: number;
    leitura_atual: number;
-   valor_total: number;
-   valor_empresa: number;
-   valor_cliente: number;
+   valor_faturado: number;
+   valor_comissao: number;
+   valor_liquido: number;
+   pelucias_saidas: number;
+   observacoes?: string;
    percentual_comissao: number;
    data_leitura: string;
    usuario_id: string;

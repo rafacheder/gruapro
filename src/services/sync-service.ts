@@ -43,11 +43,12 @@
            maquina_id: leitura.maquina_id,
            cliente_id: leitura.cliente_id,
            usuario_id: leitura.usuario_id,
-           valor_faturado: leitura.valor_atual, // This should map correctly to the schema
-           pelucias_saidas: 0, // Need to handle other fields if needed
-           valor_comissao: leitura.valor_empresa, // Check mapping
-           valor_liquido: leitura.valor_cliente, // Check mapping
+           valor_faturado: leitura.valor_faturado,
+           pelucias_saidas: leitura.pelucias_saidas,
+           valor_comissao: leitura.valor_comissao,
+           valor_liquido: leitura.valor_liquido,
            percentual_aplicado: leitura.percentual_comissao,
+           observacoes: leitura.observacoes,
            data_leitura: leitura.data_leitura,
            status: 'pendente_pagamento'
          })
@@ -90,7 +91,7 @@
          tabela: 'leituras',
          registro_id: inserted.id,
          dados_depois: { 
-           valor_faturado: leitura.valor_atual, 
+           valor_faturado: leitura.valor_faturado, 
            percentual: leitura.percentual_comissao,
            offline: true 
          },
