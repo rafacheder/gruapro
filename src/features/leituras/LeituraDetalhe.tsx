@@ -110,8 +110,31 @@ export default function LeituraDetalhe() {
     }
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
-  if (!leitura) return <div>Leitura não encontrada</div>;
+   if (loading) {
+     return (
+       <div className="flex flex-col items-center justify-center py-12 space-y-4">
+         <Loader2 className="h-8 w-8 animate-spin text-accent" />
+         <p className="text-sm text-muted-foreground">Carregando detalhes da leitura...</p>
+       </div>
+     );
+   }
+ 
+   if (!leitura) {
+     return (
+       <div className="flex flex-col items-center justify-center py-12 space-y-4 text-center">
+         <div className="h-16 w-16 rounded-full bg-secondary flex items-center justify-center">
+           <ArrowLeft className="h-8 w-8 text-muted-foreground" />
+         </div>
+         <div className="space-y-1">
+           <h3 className="text-lg font-semibold">Leitura não encontrada</h3>
+           <p className="text-sm text-muted-foreground">A leitura pode ter sido removida ou você não tem permissão para vê-la.</p>
+         </div>
+         <Button variant="outline" onClick={() => navigate("/leituras")}>
+           Voltar para a lista
+         </Button>
+       </div>
+     );
+   }
 
   const valorAtual = Number(leitura.valor_faturado);
   const variacao = anterior ? ((valorAtual - anterior) / anterior) * 100 : null;
