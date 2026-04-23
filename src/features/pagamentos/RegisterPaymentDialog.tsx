@@ -255,7 +255,11 @@ export default function RegisterPaymentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Cliente</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={!!initialClienteId}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o cliente" />
@@ -311,17 +315,18 @@ export default function RegisterPaymentDialog({
                        <div className="space-y-2">
                          {pendingLeituras.map((l) => (
                            <div key={l.id} className="flex items-center space-x-2 hover:bg-accent/50 p-1 rounded transition-colors">
-                             <Checkbox 
-                               id={`leitura-${l.id}`}
-                               checked={selectedLeituras.includes(l.id)}
-                               onCheckedChange={(checked) => {
-                                 if (checked) {
-                                   setSelectedLeituras([...selectedLeituras, l.id]);
-                                 } else {
-                                   setSelectedLeituras(selectedLeituras.filter(id => id !== l.id));
-                                 }
-                               }}
-                             />
+                              <Checkbox 
+                                id={`leitura-${l.id}`}
+                                checked={selectedLeituras.includes(l.id)}
+                                disabled={initialLeituraIds?.includes(l.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedLeituras([...selectedLeituras, l.id]);
+                                  } else {
+                                    setSelectedLeituras(selectedLeituras.filter(id => id !== l.id));
+                                  }
+                                }}
+                              />
                              <label 
                                htmlFor={`leitura-${l.id}`}
                                className="flex-1 text-xs cursor-pointer flex justify-between items-center"
