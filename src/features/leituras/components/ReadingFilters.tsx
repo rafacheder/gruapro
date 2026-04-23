@@ -61,18 +61,26 @@
  
        // Fetch Operators (Admin/Master only)
        if (isAdmin) {
-         // Get users with role admin or usuario who have readings
-         const { data: profilesData } = await supabase
-           .from("profiles")
-           .select(`
-             id, 
-             nome_completo,
-             user_roles!inner(role)
-           `)
-           .in("user_roles.role", ["admin", "usuario"]);
+         // Step 1: Get user IDs that have made at least one reading
+         const { data: leiturasUsers } = await supabase
+           .from("leituras")
+           .select("usuario_id");
          
-         if (profilesData) {
-           setOperadores(profilesData.map(p => ({ value: p.id, label: p.nome_completo || p.id })));
+         const userIdsWithReadings = Array.from(new Set((leiturasUsers || []).map(l => l.usuario_id)));
+ 
+         if (userIdsWithReadings.length > 0) {
+           // Step 2: Get profiles for those users who are admin or usuario
+           const { data: profilesData } = await supabase
+             .from("profiles")
+             .select(`
+               id, 
+               nome_completo
+             `)
+             .in("id", userIdsWithReadings);
+           
+           if (profilesData) {
+             setOperadores(profilesData.map(p => ({ value: p.id, label: p.nome_completo || p.id })));
+           }
          }
        }
      };
