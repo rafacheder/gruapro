@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,16 @@ import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { formatBRL, formatNumber } from "@/lib/format";
-import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2, Loader2 } from "lucide-react";
+ import { ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, AlertTriangle, ChevronRight, CheckCircle2, Loader2, Calendar as CalendarIcon } from "lucide-react";
+ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+ import { Calendar } from "@/components/ui/calendar";
+ import { getPeriodDates, PeriodType } from "@/utils/date-ranges";
+ import { DateRange } from "react-day-picker";
+ import { cn } from "@/lib/utils";
+ import { format } from "date-fns";
+ import { ptBR } from "date-fns/locale";
+ 
 import { Badge } from "@/components/ui/badge";
 import { calcularVariacao } from "@/utils/reading-calculations";
 import { formatDate } from "@/lib/format";
@@ -21,50 +30,63 @@ interface Stats {
   minhasLeiturasHoje: number;
 }
 
-export default function Dashboard() {
-  const { role, nome } = useAuth();
-  const navigate = useNavigate();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [alertas, setAlertas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingAlerts, setLoadingAlerts] = useState(false);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const inicioMes = new Date();
-      inicioMes.setDate(1);
-      inicioMes.setHours(0, 0, 0, 0);
-      const inicioHoje = new Date();
-      inicioHoje.setHours(0, 0, 0, 0);
-
-      const [todasLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
-        supabase
-          .from("leituras")
-          .select("valor_faturado, valor_comissao, valor_liquido, status"),
-        supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
-        supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
-        supabase
-          .from("leituras")
-          .select("id", { count: "exact", head: true })
-          .gte("data_leitura", inicioHoje.toISOString()),
-      ]);
-
-      const rows = todasLeituras.data || [];
-
-      setStats({
-        faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
-        comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
-        liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
-        clientesAtivos: clientesAtivos.count || 0,
-        maquinasAtivas: maquinasAtivas.count || 0,
-        leiturasMes: rows.length,
-        minhasLeiturasHoje: minhasHoje.count || 0,
-      });
-      setLoading(false);
-    };
-    load();
-  }, []);
+ export default function Dashboard() {
+   const { role, nome } = useAuth();
+   const navigate = useNavigate();
+   const [stats, setStats] = useState<Stats | null>(null);
+   const [periodType, setPeriodType] = useState<PeriodType>("mes");
+   const [customRange, setCustomRange] = useState<DateRange | undefined>({
+     from: new Date(),
+     to: new Date()
+   });
+   const [alertas, setAlertas] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+   const [loadingAlerts, setLoadingAlerts] = useState(false);
+ 
+   const periodDates = useMemo(() => {
+     const range = customRange?.from && customRange?.to 
+       ? { from: customRange.from, to: customRange.to } 
+       : undefined;
+     return getPeriodDates(periodType, range);
+   }, [periodType, customRange]);
+ 
+   useEffect(() => {
+     const load = async () => {
+       setLoading(true);
+       const inicioHoje = new Date();
+       inicioHoje.setHours(0, 0, 0, 0);
+ 
+       const { start, end } = periodDates;
+ 
+       const [periodoLeituras, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
+         supabase
+           .from("leituras")
+           .select("valor_faturado, valor_comissao, valor_liquido, status")
+           .gte("data_leitura", start.toISOString())
+           .lte("data_leitura", end.toISOString()),
+         supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
+         supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
+         supabase
+           .from("leituras")
+           .select("id", { count: "exact", head: true })
+           .gte("data_leitura", inicioHoje.toISOString()),
+       ]);
+ 
+       const rows = periodoLeituras.data || [];
+ 
+       setStats({
+         faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
+         comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
+         liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
+         clientesAtivos: clientesAtivos.count || 0,
+         maquinasAtivas: maquinasAtivas.count || 0,
+         leiturasMes: rows.length,
+         minhasLeiturasHoje: minhasHoje.count || 0,
+       });
+       setLoading(false);
+     };
+     load();
+   }, [periodDates]);
 
   useEffect(() => {
     if (role === 'usuario') return;
@@ -119,7 +141,65 @@ export default function Dashboard() {
         }
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+       {showFinancials && (
+         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+           <Tabs 
+             value={periodType} 
+             onValueChange={(v) => setPeriodType(v as PeriodType)} 
+             className="w-full sm:w-auto"
+           >
+             <TabsList className="grid grid-cols-4 w-full sm:w-auto">
+               <TabsTrigger value="mes" className="text-xs">Mês</TabsTrigger>
+               <TabsTrigger value="trimestre" className="text-xs">Trimestre</TabsTrigger>
+               <TabsTrigger value="ano" className="text-xs">Ano</TabsTrigger>
+               <TabsTrigger value="personalizado" className="text-xs">Personalizado</TabsTrigger>
+             </TabsList>
+           </Tabs>
+ 
+           {periodType === "personalizado" && (
+             <div className="flex items-center gap-2">
+               <Popover>
+                 <PopoverTrigger asChild>
+                   <Button
+                     variant="outline"
+                     className={cn(
+                       "w-full sm:w-[260px] justify-start text-left font-normal",
+                       !customRange && "text-muted-foreground"
+                     )}
+                   >
+                     <CalendarIcon className="mr-2 h-4 w-4" />
+                     {customRange?.from ? (
+                       customRange.to ? (
+                         <>
+                           {format(customRange.from, "dd/MM/yy")} -{" "}
+                           {format(customRange.to, "dd/MM/yy")}
+                         </>
+                       ) : (
+                         format(customRange.from, "dd/MM/yy")
+                       )
+                     ) : (
+                       <span>Selecione um período</span>
+                     )}
+                   </Button>
+                 </PopoverTrigger>
+                 <PopoverContent className="w-auto p-0" align="end">
+                   <Calendar
+                     initialFocus
+                     mode="range"
+                     defaultMonth={customRange?.from}
+                     selected={customRange}
+                     onSelect={setCustomRange}
+                     numberOfMonths={2}
+                     locale={ptBR}
+                   />
+                 </PopoverContent>
+               </Popover>
+             </div>
+           )}
+         </div>
+       )}
+ 
+       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         {showFinancials && (
           <>
             <StatCard
