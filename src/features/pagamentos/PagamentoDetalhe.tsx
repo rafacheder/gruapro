@@ -74,11 +74,11 @@
    useEffect(() => {
      const load = async () => {
        try {
-         const { data: p, error } = await supabase
-           .from("pagamentos")
-           .select("*, clientes(nome_ponto), registered_by_profile:profiles!pagamentos_registrado_por_fkey(nome_completo)")
-           .eq("id", id)
-           .maybeSingle();
+          const { data: p, error } = await supabase
+            .from("pagamentos")
+            .select("*, clientes(nome_ponto), registered_by_profile:profiles!pagamentos_registrado_por_profiles_fkey(nome_completo)")
+            .eq("id", id)
+            .maybeSingle();
          if (error) throw error;
          setPagamento(p);
  
