@@ -151,9 +151,6 @@ export default function UsuariosList() {
               )}
             </Card>
           ))}
-          <p className="text-xs text-muted-foreground mt-4">
-            Para criar um novo usuário, peça que ele acesse a tela de login e crie a conta. Depois, defina o papel aqui.
-          </p>
         </div>
       )}
     </div>
