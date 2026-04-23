@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,8 @@ export default function MaquinasList() {
   const canEdit = canManageData(role);
   const [items, setItems] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+   const [search, setSearch] = useState("");
+   const deferredSearch = useDeferredValue(search);
 
   useEffect(() => {
     const load = async () => {
@@ -39,15 +40,17 @@ export default function MaquinasList() {
     load();
   }, []);
 
-  const filtered = items.filter((m) => {
-    const s = search.toLowerCase();
-    return (
-      !s ||
-      m.codigo_identificacao.toLowerCase().includes(s) ||
-      (m.modelo || "").toLowerCase().includes(s) ||
-      (m.clientes?.nome_ponto || "").toLowerCase().includes(s)
-    );
-  });
+   const filtered = useMemo(() => {
+     const s = deferredSearch.toLowerCase();
+     return items.filter((m) => {
+       return (
+         !s ||
+         m.codigo_identificacao.toLowerCase().includes(s) ||
+         (m.modelo || "").toLowerCase().includes(s) ||
+         (m.clientes?.nome_ponto || "").toLowerCase().includes(s)
+       );
+     });
+   }, [items, deferredSearch]);
 
   const statusVariant = (s: string) =>
     s === "ativa" ? "default" : s === "manutencao" ? "secondary" : "outline";
