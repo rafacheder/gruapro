@@ -6,7 +6,19 @@
  import { Badge } from "@/components/ui/badge";
  import PageHeader from "@/components/PageHeader";
  import { useAuth } from "@/contexts/AuthContext";
- import { ArrowLeft, FileDown, Loader2, Calendar, CreditCard, User, Info, ClipboardCheck } from "lucide-react";
+ import { ArrowLeft, FileDown, Loader2, Calendar, CreditCard, User, Info, ClipboardCheck, Trash2 } from "lucide-react";
+ import {
+   AlertDialog,
+   AlertDialogAction,
+   AlertDialogCancel,
+   AlertDialogContent,
+   AlertDialogDescription,
+   AlertDialogFooter,
+   AlertDialogHeader,
+   AlertDialogTitle,
+   AlertDialogTrigger,
+ } from "@/components/ui/alert-dialog";
+ import { logAudit } from "@/lib/audit";
  import { formatBRL, formatDateTime } from "@/lib/format";
  import { toast } from "sonner";
  
@@ -17,6 +29,47 @@
    const [pagamento, setPagamento] = useState<any>(null);
    const [leituras, setLeituras] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
+   const [deleting, setDeleting] = useState(false);
+   const handleDelete = async () => {
+     setDeleting(true);
+     try {
+       // Obter leituras vinculadas antes de excluir
+       const { data: links } = await supabase
+         .from("pagamento_leituras")
+         .select("leitura_id")
+         .eq("pagamento_id", id);
+ 
+       const leituraIds = links?.map(l => l.leitura_id) || [];
+ 
+       // Voltar leituras para pendente
+       if (leituraIds.length > 0) {
+         const { error: updateError } = await supabase
+           .from("leituras")
+           .update({ status: "pendente" })
+           .in("id", leituraIds);
+         if (updateError) throw updateError;
+       }
+ 
+       const { error } = await supabase.from("pagamentos").delete().eq("id", id);
+       if (error) throw error;
+ 
+       await logAudit({
+         acao: "DELETE",
+         tabela: "pagamentos",
+         registro_id: id,
+         dados_antes: pagamento,
+       });
+ 
+       toast.success("Pagamento excluído com sucesso");
+       navigate("/pagamentos", { replace: true });
+     } catch (err) {
+       console.error(err);
+       toast.error("Erro ao excluir pagamento");
+     } finally {
+       setDeleting(false);
+     }
+   };
+ 
  
    useEffect(() => {
      const load = async () => {
@@ -77,11 +130,36 @@
          title={`Pagamento: ${pagamento.clientes?.nome_ponto}`}
          description={formatDateTime(pagamento.data_pagamento)}
          action={
-           pagamento.comprovante_url && (
-             <Button onClick={handleDownloadComprovante} variant="outline" className="border-accent text-accent hover:bg-accent/10">
-               <FileDown className="h-4 w-4 mr-2" /> Comprovante
-             </Button>
-           )
+           <div className="flex gap-2">
+             {pagamento.comprovante_url && (
+               <Button onClick={handleDownloadComprovante} variant="outline" className="border-accent text-accent hover:bg-accent/10">
+                 <FileDown className="h-4 w-4 mr-2" /> Comprovante
+               </Button>
+             )}
+             {(role === "master" || role === "admin") && (
+               <AlertDialog>
+                 <AlertDialogTrigger asChild>
+                   <Button variant="destructive" size="icon" disabled={deleting}>
+                     {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                   </Button>
+                 </AlertDialogTrigger>
+                 <AlertDialogContent>
+                   <AlertDialogHeader>
+                     <AlertDialogTitle>Excluir pagamento?</AlertDialogTitle>
+                     <AlertDialogDescription>
+                       Esta ação não pode ser desfeita. Todas as leituras vinculadas voltarão para o status "pendente".
+                     </AlertDialogDescription>
+                   </AlertDialogHeader>
+                   <AlertDialogFooter>
+                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                     <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                       Excluir
+                     </AlertDialogAction>
+                   </AlertDialogFooter>
+                 </AlertDialogContent>
+               </AlertDialog>
+             )}
+           </div>
          }
        />
  
