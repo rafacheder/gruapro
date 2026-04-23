@@ -1,25 +1,22 @@
-// Formatadores pt-BR
-export const formatBRL = (v: number | null | undefined) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v || 0));
-
-export const formatNumber = (v: number | null | undefined) =>
-  new Intl.NumberFormat("pt-BR").format(Number(v || 0));
-
-export const formatPercent = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(v) + "%";
-
-export const formatDateTime = (iso: string | Date) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone: "America/Sao_Paulo",
-  }).format(new Date(iso));
-
-export const formatDate = (iso: string | Date) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeZone: "America/Sao_Paulo",
-  }).format(new Date(iso));
+ // Formatadores pt-BR estáticos para performance
+ const brlFormatter = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+ const numberFormatter = new Intl.NumberFormat("pt-BR");
+ const percentFormatter = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
+   dateStyle: "short",
+   timeStyle: "short",
+   timeZone: "America/Sao_Paulo",
+ });
+ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+   dateStyle: "short",
+   timeZone: "America/Sao_Paulo",
+ });
+ 
+ export const formatBRL = (v: number | null | undefined) => brlFormatter.format(Number(v || 0));
+ export const formatNumber = (v: number | null | undefined) => numberFormatter.format(Number(v || 0));
+ export const formatPercent = (v: number) => percentFormatter.format(v) + "%";
+ export const formatDateTime = (iso: string | Date) => dateTimeFormatter.format(new Date(iso));
+ export const formatDate = (iso: string | Date) => dateFormatter.format(new Date(iso));
 
 export const maskPhone = (v: string) => {
   const d = (v || "").replace(/\D/g, "").slice(0, 11);
