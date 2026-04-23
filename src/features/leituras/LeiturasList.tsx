@@ -117,6 +117,16 @@ import { calcularVariacao } from "@/utils/reading-calculations";
     }, [filters, page, items.length]);
 
     useEffect(() => {
+      const newFilters = getFiltersFromSearchParams(searchParams);
+      const currentFiltersJson = JSON.stringify(filters);
+      const newFiltersJson = JSON.stringify(newFilters);
+      
+      if (newFiltersJson !== currentFiltersJson) {
+        setFilters(newFilters);
+      }
+    }, [searchParams, getFiltersFromSearchParams]);
+
+    useEffect(() => {
       fetchData();
       
       // Update URL immediately when filters change
