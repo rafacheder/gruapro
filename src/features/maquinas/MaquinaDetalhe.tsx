@@ -41,7 +41,7 @@ export default function MaquinaDetalhe() {
       setLeituras(l || []);
       
       if (m) {
-        const url = `${window.location.origin}/leituras/nova?maquina_id=${m.id}`;
+        const url = `${window.location.origin}/maquina/${m.id}`;
         const dataUrl = await QRCode.toDataURL(url, { width: 400, margin: 2 });
         setQrCodeDataUrl(dataUrl);
       }
