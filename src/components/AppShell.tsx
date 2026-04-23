@@ -64,12 +64,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
      await signOut();
      navigate("/login");
    };
-           <div className="flex items-center gap-2">
-             <SyncStatusBadge />
-             <Button size="icon" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" onClick={() => navigate("/leituras/nova")}>
-               <Plus className="h-5 w-5" />
-             </Button>
-           </div>
 
   return (
     <div className="min-h-screen bg-background flex">
