@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,13 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
- import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode } from "lucide-react";
+ import { ArrowLeft, Camera, Loader2, X, AlertTriangle, QrCode, CloudOff } from "lucide-react";
  import { Html5QrcodeScanner } from "html5-qrcode";
 import { calcComissao, formatBRL } from "@/lib/format";
 import { logAudit } from "@/lib/audit";
-import { useAuth } from "@/contexts/AuthContext";
+ import { useAuth } from "@/contexts/AuthContext";
+ import { useOnlineStatus } from "@/hooks/use-online-status";
+ import { saveOfflineLeitura } from "@/services/sync-service";
 
 interface MaquinaOpt {
   id: string;
@@ -35,7 +37,8 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), "image/jpeg", quality));
 }
 
-export default function NovaLeitura() {
+ export default function NovaLeitura() {
+   const isOnline = useOnlineStatus();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
@@ -180,61 +183,92 @@ export default function NovaLeitura() {
     setPreviews((p) => p.filter((_, idx) => idx !== i));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
-    if (valorNum < 0) { toast.error("Valor inválido"); return; }
-    if (!user) { toast.error("Sessão expirada"); return; }
-
-    setSaving(true);
-    try {
-      const { data: leitura, error } = await supabase
-        .from("leituras")
-        .insert({
-          maquina_id: maquinaSel.id,
-          cliente_id: maquinaSel.cliente_id,
-          usuario_id: user.id,
-          valor_faturado: valorNum,
-          pelucias_saidas: parseInt(pelucias) || 0,
-          valor_comissao: comissao,
-          valor_liquido: liquido,
-          percentual_aplicado: percentual,
-          observacoes: observacoes || null,
-          status: "pendente_pagamento",
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-
-      // Upload fotos
-      for (let i = 0; i < fotos.length; i++) {
-        const blob = await compressImage(fotos[i]);
-        const path = `${leitura.id}/${i + 1}-${Date.now()}.jpg`;
-        const { error: upErr } = await supabase.storage.from("leitura-fotos").upload(path, blob, { contentType: "image/jpeg" });
-        if (upErr) { console.error(upErr); continue; }
-        const { data: pub } = supabase.storage.from("leitura-fotos").getPublicUrl(path);
-        await supabase.from("leitura_fotos").insert({
-          leitura_id: leitura.id,
-          foto_url: pub.publicUrl,
-          ordem: i + 1,
-        });
-      }
-
-      await logAudit({
-        acao: "CREATE_LEITURA",
-        tabela: "leituras",
-        registro_id: leitura.id,
-        dados_depois: { valor_faturado: valorNum, comissao, percentual },
-      });
-
-      toast.success("Leitura registrada!");
-      navigate(`/leituras/${leitura.id}`);
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
-  };
+   const handleSubmit = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!maquinaSel) { toast.error("Selecione uma máquina"); return; }
+     if (valorNum < 0) { toast.error("Valor inválido"); return; }
+     if (!user) { toast.error("Sessão expirada"); return; }
+ 
+     setSaving(true);
+     try {
+       if (isOnline) {
+         const { data: leitura, error } = await supabase
+           .from("leituras")
+           .insert({
+             maquina_id: maquinaSel.id,
+             cliente_id: maquinaSel.cliente_id,
+             usuario_id: user.id,
+             valor_faturado: valorNum,
+             pelucias_saidas: parseInt(pelucias) || 0,
+             valor_comissao: comissao,
+             valor_liquido: liquido,
+             percentual_aplicado: percentual,
+             observacoes: observacoes || null,
+             status: "pendente_pagamento",
+           })
+           .select("id")
+           .single();
+         if (error) throw error;
+ 
+         // Upload fotos
+         for (let i = 0; i < fotos.length; i++) {
+           const blob = await compressImage(fotos[i]);
+           const path = `${leitura.id}/${i + 1}-${Date.now()}.jpg`;
+           const { error: upErr } = await supabase.storage.from("leitura-fotos").upload(path, blob, { contentType: "image/jpeg" });
+           if (upErr) { console.error(upErr); continue; }
+           const { data: pub } = supabase.storage.from("leitura-fotos").getPublicUrl(path);
+           await supabase.from("leitura_fotos").insert({
+             leitura_id: leitura.id,
+             foto_url: pub.publicUrl,
+             ordem: i + 1,
+           });
+         }
+ 
+         await logAudit({
+           acao: "CREATE_LEITURA",
+           tabela: "leituras",
+           registro_id: leitura.id,
+           dados_depois: { valor_faturado: valorNum, comissao, percentual },
+         });
+ 
+         toast.success("Leitura registrada!");
+         navigate(`/leituras/${leitura.id}`);
+       } else {
+         // Modo offline
+         const fotosData = [];
+         for (let i = 0; i < fotos.length; i++) {
+           const blob = await compressImage(fotos[i]);
+           fotosData.push({
+             campo: `foto_${i + 1}`,
+             blob,
+             fileName: `${i + 1}-${Date.now()}.jpg`
+           });
+         }
+ 
+         await saveOfflineLeitura({
+           maquina_id: maquinaSel.id,
+           cliente_id: maquinaSel.cliente_id,
+           usuario_id: user.id,
+           valor_faturado: valorNum,
+           pelucias_saidas: parseInt(pelucias) || 0,
+           valor_comissao: comissao,
+           valor_liquido: liquido,
+           percentual_comissao: percentual,
+           observacoes: observacoes || undefined,
+           data_leitura: new Date().toISOString(),
+           leitura_anterior: 0, // Not used in insert but present in PendingLeitura
+           leitura_atual: 0, // Not used in insert but present in PendingLeitura
+         }, fotosData);
+ 
+         toast.success("Leitura salva offline! Será sincronizada quando houver conexão.");
+         navigate("/leituras");
+       }
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+     } finally {
+       setSaving(false);
+     }
+   };
 
   return (
     <div>
