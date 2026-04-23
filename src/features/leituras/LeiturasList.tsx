@@ -18,9 +18,15 @@ import {
  } from "@/components/ui/tabs";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import RegisterPaymentDialog from "../pagamentos/RegisterPaymentDialog";
-   const isAdmin = role === 'admin' || role === 'master';
+ 
+ export default function LeiturasList() {
+   const navigate = useNavigate();
+   const { role } = useAuth();
+   const [selectedIds, setSelectedIds] = useState<string[]>([]);
    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
    const [batchSelection, setBatchSelection] = useState<{ids: string[], clienteId: string} | null>(null);
+ 
+   const isAdmin = role === 'admin' || role === 'master';
  
    const selectedItems = useMemo(() => {
      return items.filter(i => selectedIds.includes(i.id));
@@ -42,12 +48,6 @@ import {
      
      return { valid: true, error: null, clienteId: firstClienteId };
    }, [selectedItems, selectedIds]);
- 
-
-export default function LeiturasList() {
-  const navigate = useNavigate();
-  const { role } = useAuth();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const showFinancials = canSeeFinancials(role);
    const [items, setItems] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
