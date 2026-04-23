@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
-import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle } from "lucide-react";
+ import { ClipboardList, Plus, Loader2, TrendingDown, TrendingUp, Minus, AlertTriangle, FileText } from "lucide-react";
+ import { toast } from "sonner";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
 import { calcularVariacao } from "@/utils/reading-calculations";
@@ -161,23 +162,24 @@ export default function LeiturasList() {
                     )}
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  {showFinancials && (
-                    <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
-                  )}
-                  <Badge 
-                    variant={l.status === "pago" ? "default" : "secondary"} 
-                    className={`mt-1 text-[10px] capitalize ${
-                      l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' : 
-                      l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' : 
-                      ''
-                    }`}
-                  >
-                    {l.status}
-                  </Badge>
-                </div>
-              </Card>
-            </Link>
+                 <div className="text-right shrink-0">
+                   {showFinancials && (
+                     <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
+                   )}
+                   <Badge 
+                     variant={l.status === "pago" ? "default" : "secondary"} 
+                     className={`mt-1 text-[10px] capitalize ${
+                       l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' : 
+                       l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' : 
+                       ''
+                     }`}
+                   >
+                     {l.status}
+                   </Badge>
+                 </div>
+               </Card>
+               </Link>
+             </div>
           ))}
         </div>
       )}
