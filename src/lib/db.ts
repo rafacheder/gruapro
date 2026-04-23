@@ -15,7 +15,8 @@
    percentual_comissao: number;
    data_leitura: string;
    usuario_id: string;
-   status: 'pending' | 'syncing' | 'error';
+   status: 'pending' | 'syncing' | 'error' | 'synced';
+   synced_at?: number;
    error_message?: string;
    created_at: number;
  }

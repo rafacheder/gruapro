@@ -97,11 +97,29 @@
          },
        });
  
-       await db.pendingLeituras.update(leitura.id!, { status: 'syncing' }); // Already synced
-       // Mark as synced, but we'll remove it soon
-       // Actually we can just update status to 'pending' if it failed or remove if success
-       await db.pendingLeituras.delete(leitura.id!);
-       await db.pendingFotos.where('tempLeituraId').equals(leitura.tempId).delete();
+       await db.pendingLeituras.update(leitura.id!, { 
+         status: 'synced',
+         synced_at: Date.now()
+       });
+       // We keep the photos for 24h too? The request says "remove do IndexedDB após 24h"
+       // Let's keep them linked.
+ 
+     } catch (err: any) {
+ 
+ export async function cleanupSyncedLeituras() {
+   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+   
+   const toDelete = await db.pendingLeituras
+     .where('status')
+     .equals('synced')
+     .filter(l => l.synced_at ? l.synced_at < oneDayAgo : false)
+     .toArray();
+ 
+   for (const leitura of toDelete) {
+     await db.pendingFotos.where('tempLeituraId').equals(leitura.tempId).delete();
+     await db.pendingLeituras.delete(leitura.id!);
+   }
+ }
  
      } catch (err: any) {
        console.error('Sync failed for leitura:', leitura.id, err);
