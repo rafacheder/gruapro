@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import PublicMachine from "./pages/PublicMachine.tsx";
 import { AuthProvider } from "@/contexts/AuthContext";
  import ProtectedRoute from "@/components/ProtectedRoute";
  import AppShell from "@/components/AppShell";
@@ -44,6 +45,7 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
          <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/maquina/:id" element={<PublicMachine />} />
             <Route path="/" element={<Shell><Dashboard /></Shell>} />
             <Route path="/clientes" element={<Shell><ClientesList /></Shell>} />
             <Route path="/clientes/novo" element={<Shell><ClienteForm /></Shell>} />
