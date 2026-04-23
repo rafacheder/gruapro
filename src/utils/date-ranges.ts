@@ -1,19 +1,23 @@
- import { 
-   startOfMonth, 
-   endOfMonth, 
-   startOfQuarter, 
-   endOfQuarter, 
-   startOfYear, 
-    endOfYear,
-    startOfDay,
-    endOfDay
-  } from "date-fns";
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfQuarter,
+  endOfQuarter,
+  startOfYear,
+  endOfYear,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
  
- export type PeriodType = "mes" | "trimestre" | "ano" | "personalizado";
+export type PeriodType = "mes" | "trimestre" | "ano" | "personalizado";
  
-   export function getPeriodDates(period: PeriodType, customRange?: { from: Date; to: Date }): { start: Date; end: Date } {
-   const now = new Date();
-   
+export function getPeriodDates(
+  period: PeriodType,
+  customRange?: { from: Date; to: Date },
+  baseDate: Date = new Date(),
+): { start: Date; end: Date } {
+  const now = baseDate;
+
    switch (period) {
      case "mes":
        return {
