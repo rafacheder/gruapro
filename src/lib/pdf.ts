@@ -190,7 +190,7 @@
    doc.text("GRUAPRO", 24, y, { align: "center" });
    y += 5;
    doc.setFont("courier", "normal");
-   doc.setFontSize(8);
+    doc.setFontSize(7);
    doc.text("--------------", 24, y, { align: "center" });
    y += 5;
  
@@ -229,7 +229,6 @@
      doc.setFont("courier", "normal");
      doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, margin, y); y += 4;
      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, margin, y); y += 4;
-     doc.text(`  DIF  ${String(entradaDelta).padStart(5)} ${String(saidaDelta).padStart(5)}`, margin, y); y += 4;
      
      doc.text("  Total", margin, y);
      doc.text(formatBRL(l.valor_faturado).padStart(12), rightAlignX, y, { align: "right" }); y += 4;
@@ -442,7 +441,7 @@ interface LeituraPdf {
    doc.setFont("helvetica", "bold");
    doc.text("GruaPro", 28.5, 8, { align: "center" });
    
-   doc.setFontSize(8);
+    doc.setFontSize(7);
    doc.text("Relatório de Leitura", 28.5, 12, { align: "center" });
    
    doc.setFont("helvetica", "normal");
@@ -469,7 +468,7 @@ interface LeituraPdf {
    doc.line(2, y, 55, y);
    y += 5;
    
-   doc.setFontSize(8);
+    doc.setFontSize(7);
    doc.text("Faturado:", 2, y);
    doc.setFont("helvetica", "bold");
    doc.text(formatBRL(l.valor_faturado), 55, y, { align: "right" });
