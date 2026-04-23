@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
- import { LayoutDashboard, Users, Cpu, ClipboardList, Plus, LogOut, Shield, ScrollText, Menu, AlertTriangle } from "lucide-react";
+  import { LayoutDashboard, Users, Cpu, ClipboardList, Plus, LogOut, Shield, ScrollText, Menu, AlertTriangle, CreditCard, FileText } from "lucide-react";
  import SyncStatusBadge from "./SyncStatusBadge";
  import { db } from "@/lib/db";
  import { toast } from "sonner";
@@ -15,6 +15,8 @@ const navItems = [
   { to: "/clientes", label: "Clientes", icon: Users, roles: ["master", "admin", "usuario"] as const },
   { to: "/maquinas", label: "Máquinas", icon: Cpu, roles: ["master", "admin", "usuario"] as const },
   { to: "/leituras", label: "Leituras", icon: ClipboardList, roles: ["master", "admin", "usuario"] as const },
+  { to: "/pagamentos", label: "Pagamentos", icon: CreditCard, roles: ["master", "admin"] as const },
+  { to: "/extratos", label: "Extratos", icon: FileText, roles: ["master", "admin"] as const },
   { to: "/usuarios", label: "Usuários", icon: Shield, roles: ["master", "admin"] as const },
   { to: "/audit", label: "Audit log", icon: ScrollText, roles: ["master"] as const },
 ];
