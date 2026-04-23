@@ -270,6 +270,11 @@ interface Stats {
               value={loading ? "—" : formatNumber(stats?.maquinasAtivas || 0)}
               icon={Cpu}
             />
+           <StatCard
+             title="Pelúcias Saídas"
+             value={loading ? "—" : formatNumber(stats?.totalPelucias || 0)}
+             icon={Package}
+           />
           </>
         )}
         {showFinancials && (
