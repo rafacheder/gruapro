@@ -24,7 +24,6 @@ interface LeituraPdf {
    }
  
    const doc = new jsPDF();
-  const doc = new jsPDF();
   const now = new Date();
   const docId = `LEI-${l.id.slice(0, 8).toUpperCase()}-${now.getFullYear()}`;
   const payload = JSON.stringify({
@@ -207,11 +206,9 @@ interface LeituraPdf {
    doc.text(`Gerado por ${l.usuario_nome}`, 2, y + 3);
    doc.text(`${formatDateTime(now)}`, 2, y + 6);
  
-   doc.save(`leitura-${docId}-Termico.pdf`);
-   return { docId, hash };
+    doc.save(`leitura-${docId}-Termico.pdf`);
+    return { docId, hash };
  }
-  return { docId, hash };
-}
 
 async function fetchAsDataURL(url: string): Promise<string> {
   const res = await fetch(url);
