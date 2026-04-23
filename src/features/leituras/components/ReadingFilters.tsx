@@ -109,8 +109,8 @@
    const isFilterActive = filters.clienteId || filters.maquinaId || filters.status !== "all" || filters.startDate || filters.endDate || filters.operadorId;
  
    const FilterForm = ({ className }: { className?: string }) => (
-     <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4", className)}>
-       <div className="space-y-1.5">
+    <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4", className)}>
+        <div className="space-y-1.5 lg:col-span-2">
          <label className="text-xs font-medium">Cliente</label>
          <Combobox
            options={clientes}
