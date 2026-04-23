@@ -712,6 +712,12 @@ export type Database = {
           aprovada_por: string | null
           assinatura_base64: string | null
           cliente_id: string | null
+          contador_entrada_anterior: number | null
+          contador_entrada_anterior_val: number | null
+          contador_entrada_atual: number | null
+          contador_saida_anterior: number | null
+          contador_saida_anterior_val: number | null
+          contador_saida_atual: number | null
           created_at: string | null
           data_leitura: string | null
           data_leitura_pre_previa: string | null
@@ -732,6 +738,7 @@ export type Database = {
           valor_faturado: number | null
           valor_faturado_previo: number | null
           valor_liquido: number | null
+          valor_por_credito: number | null
         }
         Relationships: [
           {
