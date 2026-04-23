@@ -13,7 +13,7 @@ import { formatDate } from "@/lib/format";
 
 interface Stats {
   faturamentoMes: number;
-  comissaoMes: number;
+  comissaoPendenteTotal: number;
   liquidoMes: number;
   clientesAtivos: number;
   maquinasAtivas: number;
@@ -38,11 +38,15 @@ export default function Dashboard() {
       const inicioHoje = new Date();
       inicioHoje.setHours(0, 0, 0, 0);
 
-      const [leiturasMes, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
+      const [leiturasMes, todasPendentes, clientesAtivos, maquinasAtivas, minhasHoje] = await Promise.all([
         supabase
           .from("leituras")
           .select("valor_faturado, valor_comissao, valor_liquido")
           .gte("data_leitura", inicioMes.toISOString()),
+        supabase
+          .from("leituras")
+          .select("valor_comissao")
+          .eq("status", "pendente"),
         supabase.from("clientes").select("id", { count: "exact", head: true }).eq("ativo", true),
         supabase.from("maquinas").select("id", { count: "exact", head: true }).eq("status", "ativa"),
         supabase
@@ -51,14 +55,16 @@ export default function Dashboard() {
           .gte("data_leitura", inicioHoje.toISOString()),
       ]);
 
-      const rows = leiturasMes.data || [];
+      const rowsMes = leiturasMes.data || [];
+      const rowsPendentes = todasPendentes.data || [];
+
       setStats({
-        faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
-        comissaoMes: rows.reduce((s, r) => s + Number(r.valor_comissao), 0),
-        liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
+        faturamentoMes: rowsMes.reduce((s, r) => s + Number(r.valor_faturado), 0),
+        comissaoPendenteTotal: rowsPendentes.reduce((s, r) => s + Number(r.valor_comissao), 0),
+        liquidoMes: rowsMes.reduce((s, r) => s + Number(r.valor_liquido), 0),
         clientesAtivos: clientesAtivos.count || 0,
         maquinasAtivas: maquinasAtivas.count || 0,
-        leiturasMes: rows.length,
+        leiturasMes: rowsMes.length,
         minhasLeiturasHoje: minhasHoje.count || 0,
       });
       setLoading(false);
@@ -130,7 +136,7 @@ export default function Dashboard() {
             />
             <StatCard
               title="Comissão a pagar"
-              value={loading ? "—" : formatBRL(stats?.comissaoMes || 0)}
+              value={loading ? "—" : formatBRL(stats?.comissaoPendenteTotal || 0)}
               icon={Wallet}
             />
             <StatCard
