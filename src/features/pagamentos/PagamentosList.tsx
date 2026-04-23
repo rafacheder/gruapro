@@ -51,7 +51,7 @@ export default function PagamentosList() {
          "postgres_changes",
          { event: "*", schema: "public", table: "pagamentos" },
          () => {
-           loadData();
+           loadData(true);
          }
        )
        .subscribe();
@@ -66,15 +66,22 @@ export default function PagamentosList() {
     setClientes(data || []);
   }
 
-  async function loadData() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("pagamentos")
-      .select("*, clientes(nome_ponto)")
-      .order("data_pagamento", { ascending: false });
-    setPagamentos((data as any) || []);
-    setLoading(false);
-  }
+   async function loadData(isSilent = false) {
+     if (!isSilent) setLoading(true);
+     try {
+       const { data, error } = await supabase
+         .from("pagamentos")
+         .select("*, clientes(nome_ponto)")
+         .order("data_pagamento", { ascending: false });
+       
+       if (error) throw error;
+       setPagamentos((data as any) || []);
+     } catch (err) {
+       console.error("Erro ao carregar pagamentos:", err);
+     } finally {
+       setLoading(false);
+     }
+   }
 
   const filtered = pagamentos.filter((p) => {
     const matchCliente = filterCliente === "all" || (p as any).cliente_id === filterCliente;
