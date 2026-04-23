@@ -399,42 +399,12 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
                </div>
              )}
  
-              <Select value={maquinaId} onValueChange={(val) => {
-                setMaquinaId(val);
-                const m = maquinas.find(x => x.id === val);
-                if (m) setCurrentClienteId(m.cliente_id);
-              }}>
-
-              {maquinasDoCliente.length > 1 && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <Label className="text-xs uppercase text-muted-foreground mb-2 block">
-                    Máquinas deste cliente ({leiturasRealizadas.filter(id => maquinasDoCliente.some(m => m.id === id)).length}/{maquinasDoCliente.length})
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {maquinasDoCliente.map(m => {
-                      const jaLida = leiturasRealizadas.includes(m.id);
-                      const isSelected = maquinaId === m.id;
-                      return (
-                        <Button
-                          key={m.id}
-                          type="button"
-                          variant={isSelected ? "default" : "outline"}
-                          size="sm"
-                          className={`h-auto py-1 px-3 text-xs ${jaLida && !isSelected ? 'opacity-60 grayscale border-success/20 bg-success/10 text-success-foreground' : ''}`}
-                          onClick={() => {
-                            setMaquinaId(m.id);
-                            if (jaLida) toast.info("Esta máquina já foi registrada nesta sessão.");
-                          }}
-                        >
-                          {jaLida && <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />}
-                          {m.codigo_identificacao}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-              <SelectTrigger><SelectValue placeholder="Selecione a máquina..." /></SelectTrigger>
+               <Select value={maquinaId} onValueChange={(val) => {
+                 setMaquinaId(val);
+                 const m = maquinas.find(x => x.id === val);
+                 if (m) setCurrentClienteId(m.cliente_id);
+               }}>
+                 <SelectTrigger><SelectValue placeholder="Selecione a máquina..." /></SelectTrigger>
               <SelectContent>
                 {maquinas.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
@@ -442,7 +412,37 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
                   </SelectItem>
                 ))}
               </SelectContent>
-            </Select>
+             </Select>
+
+             {maquinasDoCliente.length > 1 && (
+               <div className="mt-4 pt-4 border-t border-border">
+                 <Label className="text-xs uppercase text-muted-foreground mb-2 block">
+                   Máquinas deste cliente ({leiturasRealizadas.filter(id => maquinasDoCliente.some(m => m.id === id)).length}/{maquinasDoCliente.length})
+                 </Label>
+                 <div className="flex flex-wrap gap-2">
+                   {maquinasDoCliente.map(m => {
+                     const jaLida = leiturasRealizadas.includes(m.id);
+                     const isSelected = maquinaId === m.id;
+                     return (
+                       <Button
+                         key={m.id}
+                         type="button"
+                         variant={isSelected ? "default" : "outline"}
+                         size="sm"
+                         className={`h-auto py-1 px-3 text-xs ${jaLida && !isSelected ? 'opacity-60 grayscale border-success/20 bg-success/10 text-success-foreground' : ''}`}
+                         onClick={() => {
+                           setMaquinaId(m.id);
+                           if (jaLida) toast.info("Esta máquina já foi registrada nesta sessão.");
+                         }}
+                       >
+                         {jaLida && <CheckCircle2 className="h-3 w-3 mr-1 text-success" />}
+                         {m.codigo_identificacao}
+                       </Button>
+                     );
+                   })}
+                 </div>
+               </div>
+             )}
           </div>
         </Card>
 
