@@ -75,18 +75,30 @@ export function useDashboardStats(role: string | undefined) {
           .gte("data_leitura", inicioHoje.toISOString()),
       ]);
 
-      const rows = periodoLeituras.data || [];
-
-      setStats({
-        faturamentoMes: rows.reduce((s, r) => s + Number(r.valor_faturado), 0),
-        comissaoPendente: rows.filter(r => r.status === 'pendente').reduce((s, r) => s + Number(r.valor_comissao), 0),
-        liquidoMes: rows.reduce((s, r) => s + Number(r.valor_liquido), 0),
-        clientesAtivos: clientesAtivos.count || 0,
-        maquinasAtivas: maquinasAtivas.count || 0,
-        leiturasMes: rows.length,
-        minhasLeiturasHoje: minhasHoje.count || 0,
-        totalPelucias: rows.reduce((s, r) => s + (r.pelucias_saidas || 0), 0),
-      });
+       const rows = periodoLeituras.data || [];
+       
+       const initialStats: Stats = {
+         faturamentoMes: 0,
+         comissaoPendente: 0,
+         liquidoMes: 0,
+         clientesAtivos: clientesAtivos.count || 0,
+         maquinasAtivas: maquinasAtivas.count || 0,
+         leiturasMes: rows.length,
+         minhasLeiturasHoje: minhasHoje.count || 0,
+         totalPelucias: 0,
+       };
+ 
+       const calculatedStats = rows.reduce((acc, row) => {
+         acc.faturamentoMes += Number(row.valor_faturado) || 0;
+         acc.liquidoMes += Number(row.valor_liquido) || 0;
+         acc.totalPelucias += (row.pelucias_saidas || 0);
+         if (row.status === 'pendente') {
+           acc.comissaoPendente += Number(row.valor_comissao) || 0;
+         }
+         return acc;
+       }, initialStats);
+ 
+       setStats(calculatedStats);
       setLoading(false);
     };
     load();

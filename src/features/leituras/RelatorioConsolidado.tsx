@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+ import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -75,11 +75,15 @@ export default function RelatorioConsolidado() {
     toast.success("PDF gerado com sucesso!");
   };
 
-  if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
-
-  const totalGeral = leituras.reduce((acc, l) => acc + Number(l.valor_faturado), 0);
-  const totalComissao = leituras.reduce((acc, l) => acc + Number(l.valor_comissao), 0);
-  const totalLiquido = leituras.reduce((acc, l) => acc + Number(l.valor_liquido), 0);
+   const { totalGeral, totalComissao, totalLiquido } = useMemo(() => {
+     return leituras.reduce((acc, l) => ({
+       totalGeral: acc.totalGeral + Number(l.valor_faturado),
+       totalComissao: acc.totalComissao + Number(l.valor_comissao),
+       totalLiquido: acc.totalLiquido + Number(l.valor_liquido)
+     }), { totalGeral: 0, totalComissao: 0, totalLiquido: 0 });
+   }, [leituras]);
+ 
+   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
 
   return (
     <div className="max-w-4xl mx-auto">

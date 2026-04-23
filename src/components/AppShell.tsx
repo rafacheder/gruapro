@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+ import { ReactNode, useMemo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,30 +28,39 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const visible = navItems.filter((i) => role && (i.roles as readonly string[]).includes(role));
-
-  const NavList = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex flex-col gap-1">
-      {visible.map((item) => {
-        const active = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onClick}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-              active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+   const visible = useMemo(() => 
+     navItems.filter((i) => role && (i.roles as readonly string[]).includes(role)),
+     [role]
+   );
+ 
+ interface NavListProps {
+   items: typeof navItems;
+   currentPath: string;
+   onClick?: () => void;
+ }
+ 
+ const NavList = ({ items, currentPath, onClick }: NavListProps) => (
+   <nav className="flex flex-col gap-1">
+     {items.map((item) => {
+       const active = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
+       const Icon = item.icon;
+       return (
+         <Link
+           key={item.to}
+           to={item.to}
+           onClick={onClick}
+           className={cn(
+             "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+             active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+           )}
+         >
+           <Icon className="h-4 w-4" />
+           {item.label}
+         </Link>
+       );
+     })}
+   </nav>
+ );
 
    const handleLogout = async () => {
      const pending = await db.pendingLeituras.count();
@@ -75,9 +84,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="text-xs text-muted-foreground mt-0.5">Gestão de máquinas</div>
         </div>
-        <div className="flex-1 px-3 py-4">
-          <NavList />
-        </div>
+         <div className="flex-1 px-3 py-4">
+           <NavList items={visible} currentPath={location.pathname} />
+         </div>
          <div className="border-t border-border p-3 space-y-3">
            <div className="px-3">
              <SyncStatusBadge />
@@ -107,9 +116,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 </div>
                 <div className="text-xs text-muted-foreground">{nome}</div>
               </div>
-              <div className="px-3 py-4">
-                <NavList onClick={() => setOpen(false)} />
-              </div>
+               <div className="px-3 py-4">
+                 <NavList items={visible} currentPath={location.pathname} onClick={() => setOpen(false)} />
+               </div>
               <div className="border-t border-border p-3">
                 <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" /> Sair
