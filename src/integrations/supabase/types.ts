@@ -633,6 +633,7 @@ export type Database = {
           data_leitura_pre_previa: string | null
           data_leitura_previa: string | null
           id: string | null
+          leitura_previa_id: string | null
           maquina_id: string | null
           observacoes: string | null
           offline_synced: boolean | null
