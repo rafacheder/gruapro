@@ -115,6 +115,24 @@ export default function NovaLeitura() {
    };
  
   useEffect(() => {
+    // If maquina_id is provided in URL, validate it
+    if (maquinaIdParam) {
+      supabase
+        .from("maquinas")
+        .select("id, status")
+        .eq("id", maquinaIdParam)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error || !data) {
+            toast.error("Máquina não encontrada");
+            setMaquinaId("");
+          } else if (data.status !== "ativa") {
+            toast.error(`Máquina está com status: ${data.status}`);
+            setMaquinaId("");
+          }
+        });
+    }
+
     supabase
       .from("maquinas")
       .select("id, codigo_identificacao, cliente_id, clientes(nome_ponto, percentual_comissao)")
