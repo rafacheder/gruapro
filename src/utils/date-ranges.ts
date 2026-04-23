@@ -4,11 +4,10 @@
    startOfQuarter, 
    endOfQuarter, 
    startOfYear, 
-   endOfYear,
-   subMonths,
-   subQuarters,
-   subYears
- } from "date-fns";
+    endOfYear,
+    startOfDay,
+    endOfDay
+  } from "date-fns";
  
  export type PeriodType = "mes" | "trimestre" | "ano" | "personalizado";
  
@@ -31,12 +30,15 @@
          start: startOfYear(now),
          end: endOfYear(now),
        };
-       case "personalizado": {
-         if (customRange) {
-           return { start: customRange.from, end: customRange.to };
-         }
-         return { start: startOfMonth(now), end: endOfMonth(now) };
-       }
+    case "personalizado": {
+      if (customRange?.from) {
+        return { 
+          start: startOfDay(customRange.from), 
+          end: endOfDay(customRange.to || customRange.from) 
+        };
+      }
+      return { start: startOfMonth(now), end: endOfMonth(now) };
+    }
      default:
        return {
          start: startOfMonth(now),

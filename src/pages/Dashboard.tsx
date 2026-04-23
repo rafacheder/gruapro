@@ -35,20 +35,17 @@ interface Stats {
    const navigate = useNavigate();
    const [stats, setStats] = useState<Stats | null>(null);
    const [periodType, setPeriodType] = useState<PeriodType>("mes");
-   const [customRange, setCustomRange] = useState<DateRange | undefined>({
-     from: new Date(),
-     to: new Date()
-   });
+    const [customRange, setCustomRange] = useState<DateRange | undefined>();
    const [alertas, setAlertas] = useState<any[]>([]);
    const [loading, setLoading] = useState(true);
    const [loadingAlerts, setLoadingAlerts] = useState(false);
  
-   const periodDates = useMemo(() => {
-     const range = customRange?.from && customRange?.to 
-       ? { from: customRange.from, to: customRange.to } 
-       : undefined;
-     return getPeriodDates(periodType, range);
-   }, [periodType, customRange]);
+    const periodDates = useMemo(() => {
+      const range = customRange?.from 
+        ? { from: customRange.from, to: customRange.to as Date } 
+        : undefined;
+      return getPeriodDates(periodType, range);
+    }, [periodType, customRange]);
  
    useEffect(() => {
      const load = async () => {
