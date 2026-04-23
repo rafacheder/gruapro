@@ -45,9 +45,8 @@ export default function LeiturasList() {
           ) : null;
           return { ...l, variacao };
         });
-        setItems(mapped);
-        setFilteredItems(mapped);
-        setLoading(false);
+         setItems(mapped);
+         setLoading(false);
       });
   }, []);
 

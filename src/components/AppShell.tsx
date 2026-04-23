@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+ import { ReactNode, useMemo, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,30 +28,33 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const visible = navItems.filter((i) => role && (i.roles as readonly string[]).includes(role));
-
-  const NavList = ({ onClick }: { onClick?: () => void }) => (
-    <nav className="flex flex-col gap-1">
-      {visible.map((item) => {
-        const active = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onClick}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-              active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </nav>
-  );
+   const visible = useMemo(() => 
+     navItems.filter((i) => role && (i.roles as readonly string[]).includes(role)),
+     [role]
+   );
+ 
+   const NavList = useCallback(({ onClick }: { onClick?: () => void }) => (
+     <nav className="flex flex-col gap-1">
+       {visible.map((item) => {
+         const active = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
+         const Icon = item.icon;
+         return (
+           <Link
+             key={item.to}
+             to={item.to}
+             onClick={onClick}
+             className={cn(
+               "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+               active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+             )}
+           >
+             <Icon className="h-4 w-4" />
+             {item.label}
+           </Link>
+         );
+       })}
+     </nav>
+   ), [visible, location.pathname]);
 
    const handleLogout = async () => {
      const pending = await db.pendingLeituras.count();
