@@ -62,8 +62,9 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
    const [maquinaId, setMaquinaId] = useState(maquinaIdParam || "");
    const [isScanning, setIsScanning] = useState(false);
    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
-  const [valorFaturado, setValorFaturado] = useState("");
-  const [pelucias, setPelucias] = useState("");
+   const [contadorEntradaAtual, setContadorEntradaAtual] = useState("");
+   const [contadorSaidaAtual, setContadorSaidaAtual] = useState("");
+   const [valorPorCredito, setValorPorCredito] = useState("1,00");
   const [observacoes, setObservacoes] = useState("");
   const [fotos, setFotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -169,16 +170,33 @@ async function compressImage(file: File, maxWidth = 1600, quality = 0.75): Promi
       setUltimaLeitura(null);
       return;
     }
-    supabase
-      .from("vw_leituras_com_anterior")
-      .select("*")
-      .eq("maquina_id", maquinaId)
-      .order("data_leitura", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        setUltimaLeitura(data);
-      });
+     async function fetchLast() {
+       const { data: maquina } = await supabase.from("maquinas").select("valor_por_credito, contador_entrada_inicial, contador_saida_inicial").eq("id", maquinaId).maybeSingle();
+       if (maquina) {
+         setValorPorCredito(maquina.valor_por_credito?.toString().replace(".", ",") || "1,00");
+       }
+       
+       const { data } = await supabase
+         .from("vw_leituras_com_anterior")
+         .select("*")
+         .eq("maquina_id", maquinaId)
+         .order("data_leitura", { ascending: false })
+         .limit(1)
+         .maybeSingle();
+         
+       if (data) {
+         setUltimaLeitura(data);
+       } else if (maquina) {
+         // Se não tem leitura, usa os contadores iniciais da máquina como baseline
+         setUltimaLeitura({
+           contador_entrada_atual: maquina.contador_entrada_inicial || 0,
+           contador_saida_atual: maquina.contador_saida_inicial || 0,
+           data_leitura: null, // indica que é baseline
+           is_baseline: true
+         });
+       }
+     }
+     fetchLast();
   }, [maquinaId]);
 
    const maquinaSel = useMemo(() => maquinas.find((m) => m.id === maquinaId), [maquinas, maquinaId]);
