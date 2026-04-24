@@ -350,7 +350,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
             <div className="flex justify-center pt-4">
               <Button 
                 variant="outline" 
-                onClick={() => fetchData(true)} 
+                onClick={() => loadMore()} 
                 disabled={loadingMore}
                 className="w-full sm:w-auto"
               >
