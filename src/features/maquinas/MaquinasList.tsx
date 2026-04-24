@@ -36,8 +36,7 @@ export default function MaquinasList() {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
 
-       // @ts-ignore - dynamic table name
-       const table = isOperator ? "maquinas_operador" : "maquinas";
+       const table = (isOperator ? "maquinas_operador" : "maquinas") as any;
        const { data } = await supabase
          .from(table)
          .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")

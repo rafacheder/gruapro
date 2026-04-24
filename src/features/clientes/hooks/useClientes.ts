@@ -25,8 +25,7 @@ export function useClientes(search: string) {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
  
-        // @ts-ignore - dynamic table name
-        const table = isOperator ? "clientes_operador" : "clientes";
+        const table = (isOperator ? "clientes_operador" : "clientes") as any;
         let query = supabase.from(table).select("*");
 
         const { data } = await query.order("nome_ponto");
