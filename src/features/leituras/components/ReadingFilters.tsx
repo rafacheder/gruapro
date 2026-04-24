@@ -57,8 +57,8 @@
           .from(machinesTable as any)
           .select("id, codigo_identificacao, cliente_id");
        
-       if (machinesData) {
-         setAllMaquinas(machinesData);
+        if (machinesData && Array.isArray(machinesData)) {
+          setAllMaquinas(machinesData as any[]);
        }
  
        // Fetch Operators (Admin/Master only)
