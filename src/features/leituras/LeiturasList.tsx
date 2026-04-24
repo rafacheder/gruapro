@@ -234,17 +234,15 @@ import { calcularVariacao } from "@/utils/reading-calculations";
            <div className="space-y-2">
             {items.map((l) => (
              <div key={l.id} className="relative flex items-center gap-2">
-                {isAdmin && (
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(l.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) setSelectedIds([...selectedIds, l.id]);
-                      else setSelectedIds(selectedIds.filter(id => id !== l.id));
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent ml-2"
-                  />
-                )}
+                <input 
+                  type="checkbox" 
+                  checked={selectedIds.includes(l.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds([...selectedIds, l.id]);
+                    else setSelectedIds(selectedIds.filter(id => id !== l.id));
+                  }}
+                  className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent ml-2"
+                />
                <Link to={`/leituras/${l.id}`} className="flex-1 min-w-0">
                  <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3 relative overflow-hidden">
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${

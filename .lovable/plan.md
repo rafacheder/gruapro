@@ -1,39 +1,30 @@
+## Contexto
 
+Na tela **Leituras**, o checkbox de seleção e os botões "Relatório (N) → PDF A4 / Bobina 57mm" estão hoje restritos a usuários com role `admin` ou `master`. Operadores comuns (`usuario`) não conseguem selecionar leituras nem gerar relatórios consolidados.
 
-## Corrigir menu que não está aparecendo
+Sobre a diferença preview vs. público: confirmei no banco que existem só 2 usuários (`master` e `admin`), então ambos têm permissão. A ausência do checkbox no print do site público provavelmente é um cache antigo do navegador (PWA/service worker) — o deploy do código é o mesmo. Após esta mudança o checkbox estará visível para todos os roles, eliminando essa dúvida de uma vez.
 
-### Causa raiz
+## O que vai mudar
 
-Dois problemas combinados:
+Em `src/features/leituras/LeiturasList.tsx`:
 
-**1. Código quebrado em `AppShell.tsx`**
-As linhas 67–72 contêm um bloco JSX órfão (um `<div>` solto com `SyncStatusBadge` e botão `+`) entre a função `handleLogout` e o `return`. Sobra de patch anterior — código inválido que pode quebrar a renderização.
+1. **Checkbox de seleção** (linha 237) — remover a condição `{isAdmin && ...}`, deixando o checkbox visível para qualquer usuário autenticado.
+2. **Botão "Relatório (N)" + dropdown PDF A4 / Bobina 57mm** (linhas 160-196) — já é controlado apenas por `selectedIds.length > 0`, então passa a aparecer automaticamente para operadores assim que eles selecionarem itens. Nenhuma mudança extra.
+3. **Botão "Pagar" rápido por linha** (linha 292) — **manter** restrito a `isAdmin`. Registrar pagamento é uma ação financeira sensível e a tabela `pagamentos` exige role admin/master via RLS. Liberar o botão para operador só geraria erro de permissão.
+4. **Validação de pagamento em lote** (linhas 45-56) — **manter** como está. O dialog de registrar pagamento continua sendo admin-only.
 
-**2. Usuário sem perfil nem role após o TRUNCATE**
-Você apagou todos os registros do banco, incluindo as tabelas `profiles` e `user_roles`. Os logs de autenticação confirmam que você (rafatcheder@gmail.com, `user_id 8f446950-...`) está logado normalmente, mas:
-- Não existe linha em `profiles` para esse user → `nome` vem vazio
-- Não existe linha em `user_roles` para esse user → `role` é `null`
-- O filtro `navItems.filter((i) => role && ...)` retorna array vazio
-- Resultado: nenhum item de menu é renderizado, nem na sidebar desktop nem no bottom nav mobile
+## O que NÃO muda
 
-### O que vou fazer
+- RLS no banco — operadores já têm `SELECT` nas suas próprias leituras, então a geração de PDF funciona normalmente para os dados que eles veem.
+- Permissões financeiras (`canSeeFinancials`) — operador continua sem ver valores de comissão.
+- A rota `/leituras/consolidado` — já é acessível para qualquer autenticado.
 
-**Passo 1 — Limpar `src/components/AppShell.tsx`**
-Remover o bloco JSX órfão (linhas 67–72) que está fora de qualquer função. O resto do layout (sidebar desktop com `hidden md:flex`, header mobile, bottom nav mobile) fica como estava antes.
+## Detalhes técnicos
 
-**Passo 2 — Recriar seu perfil e role master no banco**
-Inserir, para o `auth.uid` `8f446950-ecd2-4ce6-8617-4c131a033746` (rafatcheder@gmail.com):
-- Linha em `public.profiles` com `nome_completo = 'Rafael'` e seu email
-- Linha em `public.user_roles` com `role = 'master'`
+```text
+LeiturasList.tsx
+├── linha 237: {isAdmin && (<input type="checkbox" .../>)}  → remover guard isAdmin
+└── linha 292: {isAdmin && l.status === 'pendente' && ...}  → MANTER (ação de pagamento)
+```
 
-Isso é exatamente o que o trigger `handle_new_user` faria automaticamente em um signup novo desse email — só estou refazendo manualmente porque o usuário no `auth.users` continuou existindo (o TRUNCATE não toca em `auth.*`), mas as linhas dependentes em `public.*` foram removidas.
-
-**Passo 3 — Recarregar a página**
-Após recriar profile + role, o `AuthContext` vai buscar o role na próxima leitura, `role = 'master'`, e todos os 9 itens do menu voltam a aparecer (Início, Clientes, Máquinas, Leituras, Pagamentos, Extratos, Usuários, Audit log, Reconciliação).
-
-### Resultado esperado
-
-- Sidebar desktop com logo "GruaPro", lista completa de menus, e bloco "Logado como" no rodapé
-- Header mobile com botão hambúrguer abrindo o sheet de navegação
-- Bottom nav mobile com os 4 primeiros itens (Início, Clientes, Máquinas, Leituras)
-
+Após a mudança, vou também sugerir que você **force refresh** (Ctrl+Shift+R) no site público uma vez para descartar o cache antigo do service worker.
