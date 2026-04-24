@@ -192,18 +192,23 @@ export default function LeituraDetalhe() {
          <PageHeader
            title={leitura.clientes?.nome_ponto}
            description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
-           action={
-             <div className="flex gap-2">
-               {leitura.status === 'pendente' && (role === 'admin' || role === 'master') && (
-                 <Button 
-                   onClick={() => setPaymentDialogOpen(true)}
-                   variant="outline"
-                   className="border-success text-success hover:bg-success hover:text-white"
-                 >
-                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                   Marcar como pago
-                 </Button>
-               )}
+            action={(
+              <div className="flex gap-2">
+                {(leitura.usuario_id === user?.id || role === 'admin' || role === 'master') && (
+                  <Button variant="outline" size="icon" onClick={() => navigate(`/leituras/${id}/editar`)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {leitura.status === 'pendente' && (
+                  <Button 
+                    onClick={() => setPaymentDialogOpen(true)}
+                    variant="outline"
+                    className="border-success text-success hover:bg-success hover:text-white"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Marcar como pago
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">

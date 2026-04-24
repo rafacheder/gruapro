@@ -39,10 +39,9 @@
  
    useEffect(() => {
      const fetchOptions = async () => {
-        // Fetch Clients - use view for operators
-        const clientsTable = isAdmin ? "clientes" : "clientes_operador";
+        // Fetch Clients
         const { data: clientsData } = await supabase
-          .from(clientsTable as any)
+          .from("clientes")
           .select("id, nome_ponto")
           .eq("ativo", true)
           .order("nome_ponto");
@@ -51,10 +50,9 @@
           setClientes((clientsData as any[]).map(c => ({ value: c.id, label: c.nome_ponto })));
        }
  
-        // Fetch Machines - use view for operators
-        const machinesTable = isAdmin ? "maquinas" : "maquinas_operador";
+        // Fetch Machines
         const { data: machinesData } = await supabase
-          .from(machinesTable as any)
+          .from("maquinas")
           .select("id, codigo_identificacao, cliente_id");
        
         if (machinesData && Array.isArray(machinesData)) {

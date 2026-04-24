@@ -22,11 +22,7 @@ export function useClientes(search: string) {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
  
-       const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
-       const isOperator = roleData === 'usuario';
- 
-        const table = (isOperator ? "clientes_operador" : "clientes") as any;
-        let query = supabase.from(table).select("*");
+        let query = supabase.from("clientes").select("*");
 
         const { data } = await query.order("nome_ponto");
  
