@@ -65,16 +65,8 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
                 <AppShell><UsuariosList /></AppShell>
               </ProtectedRoute>
             } />
-            <Route path="/pagamentos" element={
-              <ProtectedRoute requireRoles={["master", "admin"]}>
-                <AppShell><PagamentosList /></AppShell>
-              </ProtectedRoute>
-            } />
-             <Route path="/pagamentos/:id" element={
-               <ProtectedRoute requireRoles={["master", "admin"]}>
-                 <AppShell><PagamentoDetalhe /></AppShell>
-               </ProtectedRoute>
-             } />
+             <Route path="/pagamentos" element={<Shell><PagamentosList /></Shell>} />
+             <Route path="/pagamentos/:id" element={<Shell><PagamentoDetalhe /></Shell>} />
              <Route path="/reconciliar" element={
                <ProtectedRoute requireRoles={["master"]}>
                  <AppShell><ReconciliacaoView /></AppShell>
