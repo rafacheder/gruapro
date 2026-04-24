@@ -110,7 +110,7 @@ export function useLeituraForm() {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
  
-       const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
+        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id }) as { data: string };
        const isOperator = roleData === 'usuario';
  
         let query;
@@ -118,7 +118,7 @@ export function useLeituraForm() {
           query = supabase
             .from("maquinas_operador")
             .select("id, codigo_identificacao, cliente_id, cliente_nome")
-            .eq("ativo", true);
+            .eq("status", "ativa");
         } else {
           query = supabase
             .from("maquinas")
