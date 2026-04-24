@@ -113,33 +113,50 @@ export function useLeituraForm() {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
  
-       // @ts-ignore - dynamic table name based on role
-       const table: any = isOperator ? "maquinas_operador" : "maquinas";
-       const { data } = await supabase
-         .from(table)
-         .select(`
-           id, 
-           codigo_identificacao, 
-           cliente_id, 
-           clientes: ${isOperator ? "clientes_operador" : "clientes"} (
-             nome_ponto, 
-             ${isOperator ? "" : "percentual_comissao"}
-           )
-         `)
-         // @ts-ignore - dynamic column name
-         .eq(isOperator ? "ativo" : "status", isOperator ? true : "ativa")
-         .order("codigo_identificacao");
- 
-       if (data) {
-         const mapped = data.map((m: any) => ({
-           ...m,
-           clientes: {
-             nome_ponto: Array.isArray(m.clientes) ? m.clientes[0]?.nome_ponto : m.clientes?.nome_ponto,
-             percentual_comissao: (Array.isArray(m.clientes) ? m.clientes[0]?.percentual_comissao : m.clientes?.percentual_comissao) || 0
-           }
-         }));
-         setMaquinas(mapped as MaquinaOpt[]);
-       }
+        let query;
+        if (isOperator) {
+          query = supabase
+            .from("maquinas_operador")
+            .select("id, codigo_identificacao, cliente_id, cliente_nome")
+            .eq("ativo", true);
+        } else {
+          query = supabase
+            .from("maquinas")
+            .select(`
+              id, 
+              codigo_identificacao, 
+              cliente_id, 
+              clientes (
+                nome_ponto, 
+                percentual_comissao
+              )
+            `)
+            .eq("status", "ativa");
+        }
+
+        const { data } = await query.order("codigo_identificacao");
+
+        if (data) {
+          const mapped = data.map((m: any) => {
+            if (isOperator) {
+              return {
+                ...m,
+                clientes: {
+                  nome_ponto: m.cliente_nome,
+                  percentual_comissao: 0 // Operator doesn't see commission
+                }
+              };
+            }
+            return {
+              ...m,
+              clientes: {
+                nome_ponto: m.clientes?.nome_ponto,
+                percentual_comissao: m.clientes?.percentual_comissao || 0
+              }
+            };
+          });
+          setMaquinas(mapped as MaquinaOpt[]);
+        }
      };
      fetchMaquinas();
    }, []);
