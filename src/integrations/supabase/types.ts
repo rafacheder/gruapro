@@ -637,7 +637,6 @@ export type Database = {
       }
       maquinas_operador: {
         Row: {
-          ativo: boolean | null
           cliente_cidade: string | null
           cliente_id: string | null
           cliente_nome: string | null
@@ -646,6 +645,8 @@ export type Database = {
           data_instalacao: string | null
           id: string | null
           modelo: string | null
+          qr_code_url: string | null
+          status: Database["public"]["Enums"]["maquina_status"] | null
         }
         Relationships: [
           {
