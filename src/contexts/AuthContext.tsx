@@ -84,3 +84,7 @@ export function canManageData(role: AppRole | null) {
 export function canSeeFinancials(role: AppRole | null) {
   return role === "master" || role === "admin";
 }
+
+export function isUser(role: AppRole | null) {
+  return role === "usuario";
+}

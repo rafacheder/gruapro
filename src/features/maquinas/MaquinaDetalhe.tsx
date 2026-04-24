@@ -9,7 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
-import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
+import { useAuth, canManageData, canSeeFinancials, isUser } from "@/contexts/AuthContext";
  import { ArrowLeft, Pencil, Trash2, ClipboardList, Plus, Loader2, QrCode, Download } from "lucide-react";
  import QRCode from "qrcode";
  import { jsPDF } from "jspdf";
@@ -97,6 +97,16 @@ export default function MaquinaDetalhe() {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há leituras)");
     }
   };
+
+  if (isUser(role)) {
+    return (
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold mb-2">Acesso Restrito</h2>
+        <p className="text-muted-foreground mb-4">Você não tem permissão para ver detalhes de máquinas.</p>
+        <Button onClick={() => navigate("/maquinas")}>Voltar para Lista</Button>
+      </div>
+    );
+  }
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!maquina) return <div>Máquina não encontrada</div>;
