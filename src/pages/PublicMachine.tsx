@@ -13,18 +13,25 @@ export default function PublicMachine() {
   const [maquina, setMaquina] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("maquinas")
-        .select("*, clientes(nome_ponto, cidade)")
-        .eq("id", id)
-        .maybeSingle();
-      setMaquina(data);
-      setLoading(false);
-    };
-    load();
-  }, [id]);
+   useEffect(() => {
+     const load = async () => {
+       if (!id) return;
+       const { data, error } = await supabase.rpc("get_public_machine", { 
+         machine_id: id 
+       });
+ 
+       if (error) {
+         console.error("Erro ao carregar máquina pública:", error);
+         setMaquina(null);
+       } else if (data && data.length > 0) {
+         setMaquina(data[0]);
+       } else {
+         setMaquina(null);
+       }
+       setLoading(false);
+     };
+     load();
+   }, [id]);
 
   if (loading) {
     return (
@@ -63,8 +70,8 @@ export default function PublicMachine() {
               <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">Código</div>
               <h2 className="text-2xl font-bold">{maquina.codigo_identificacao}</h2>
             </div>
-            <Badge variant={maquina.status === "ativa" ? "default" : "secondary"}>
-              {maquina.status}
+             <Badge variant={maquina.ativo ? "default" : "secondary"}>
+               {maquina.ativo ? "Ativa" : "Inativa"}
             </Badge>
           </div>
 
@@ -75,8 +82,8 @@ export default function PublicMachine() {
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Localização</div>
-                <div className="font-medium">{maquina.clientes?.nome_ponto || "Ponto não identificado"}</div>
-                <div className="text-xs text-muted-foreground">{maquina.clientes?.cidade}</div>
+                 <div className="font-medium">Localização protegida</div>
+                 <div className="text-xs text-muted-foreground">Consulte o sistema</div>
               </div>
             </div>
 
@@ -104,9 +111,6 @@ export default function PublicMachine() {
           </div>
         </Card>
         
-        <p className="text-center text-xs text-muted-foreground mt-8">
-          Última atualização: {formatDateTime(maquina.updated_at)}
-        </p>
       </div>
     </div>
   );

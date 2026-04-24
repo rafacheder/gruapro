@@ -105,14 +105,44 @@ export function useLeituraForm() {
     };
   }, [isScanning, onScanSuccess]);
 
-  useEffect(() => {
-    supabase
-      .from("maquinas")
-      .select("id, codigo_identificacao, cliente_id, clientes(nome_ponto, percentual_comissao)")
-      .eq("status", "ativa")
-      .order("codigo_identificacao")
-      .then(({ data }) => setMaquinas((data as unknown as MaquinaOpt[]) || []));
-  }, []);
+   useEffect(() => {
+     const fetchMaquinas = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+ 
+       const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
+       const isOperator = roleData === 'usuario';
+ 
+       // @ts-ignore - dynamic table name based on role
+       const table: any = isOperator ? "maquinas_operador" : "maquinas";
+       const { data } = await supabase
+         .from(table)
+         .select(`
+           id, 
+           codigo_identificacao, 
+           cliente_id, 
+           clientes: ${isOperator ? "clientes_operador" : "clientes"} (
+             nome_ponto, 
+             ${isOperator ? "" : "percentual_comissao"}
+           )
+         `)
+         // @ts-ignore - dynamic column name
+         .eq(isOperator ? "ativo" : "status", isOperator ? true : "ativa")
+         .order("codigo_identificacao");
+ 
+       if (data) {
+         const mapped = data.map((m: any) => ({
+           ...m,
+           clientes: {
+             nome_ponto: Array.isArray(m.clientes) ? m.clientes[0]?.nome_ponto : m.clientes?.nome_ponto,
+             percentual_comissao: (Array.isArray(m.clientes) ? m.clientes[0]?.percentual_comissao : m.clientes?.percentual_comissao) || 0
+           }
+         }));
+         setMaquinas(mapped as MaquinaOpt[]);
+       }
+     };
+     fetchMaquinas();
+   }, []);
 
   useEffect(() => {
     if (!maquinaId) { setUltimaLeitura(null); return; }
