@@ -39,21 +39,23 @@
  
    useEffect(() => {
      const fetchOptions = async () => {
-       // Fetch Clients
-       const { data: clientsData } = await supabase
-         .from("clientes")
-         .select("id, nome_ponto")
-         .eq("ativo", true)
-         .order("nome_ponto");
+        // Fetch Clients - use view for operators
+        const clientsTable = isAdmin ? "clientes" : "clientes_operador";
+        const { data: clientsData } = await supabase
+          .from(clientsTable as any)
+          .select("id, nome_ponto")
+          .eq("ativo", true)
+          .order("nome_ponto");
        
        if (clientsData) {
          setClientes(clientsData.map(c => ({ value: c.id, label: c.nome_ponto })));
        }
  
-       // Fetch Machines
-       const { data: machinesData } = await supabase
-         .from("maquinas")
-         .select("id, codigo_identificacao, cliente_id");
+        // Fetch Machines - use view for operators
+        const machinesTable = isAdmin ? "maquinas" : "maquinas_operador";
+        const { data: machinesData } = await supabase
+          .from(machinesTable as any)
+          .select("id, codigo_identificacao, cliente_id");
        
        if (machinesData) {
          setAllMaquinas(machinesData);

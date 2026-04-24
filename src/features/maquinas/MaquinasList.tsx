@@ -36,17 +36,32 @@ export default function MaquinasList() {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
 
-       const table = (isOperator ? "maquinas_operador" : "maquinas") as any;
-       const { data } = await supabase
-         .from(table)
-         .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")
-         .order("codigo_identificacao");
+        let query;
+        if (isOperator) {
+          query = supabase
+            .from("maquinas_operador")
+            .select("id, codigo_identificacao, modelo, ativo, cliente_id, cliente_nome, cliente_cidade");
+        } else {
+          query = supabase
+            .from("maquinas")
+            .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)");
+        }
 
-       const mapped = (data || []).map((m: any) => ({
-         ...m,
-         // If it's the view, it doesn't have the status enum column but the boolean 'ativo'
-         status: m.status || (m.ativo ? "ativa" : "inativa")
-       }));
+        const { data } = await query.order("codigo_identificacao");
+
+        const mapped = (data || []).map((m: any) => {
+          if (isOperator) {
+            return {
+              ...m,
+              status: m.ativo ? "ativa" : "inativa",
+              clientes: {
+                nome_ponto: m.cliente_nome,
+                cidade: m.cliente_cidade
+              }
+            };
+          }
+          return m;
+        });
 
        setItems((mapped as unknown as Maquina[]) || []);
        setLoading(false);
