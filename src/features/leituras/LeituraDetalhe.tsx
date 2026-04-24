@@ -38,7 +38,7 @@ import { toast } from "sonner";
 export default function LeituraDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role, nome } = useAuth();
+  const { role, nome, user } = useAuth();
   const showFinancials = canSeeFinancials(role);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
