@@ -60,82 +60,74 @@ import { calcularVariacao } from "@/utils/reading-calculations";
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 50;
 
-    const getFiltersFromSearchParams = useCallback((params: URLSearchParams): FilterState => {
-      return {
-        clienteId: params.get("cliente") || "",
-        maquinaId: params.get("maquina") || "",
-        status: params.get("status") || "all",
-        startDate: params.get("inicio") ? parseISO(params.get("inicio")!) : startOfMonth(new Date()),
-        endDate: params.get("fim") ? parseISO(params.get("fim")!) : new Date(),
-        operadorId: params.get("operador") || "all"
-      };
-    }, []);
+    // Initialize filters once from URL (one-way: URL -> state on mount)
+    const [filters, setFilters] = useState<FilterState>(() => ({
+      clienteId: searchParams.get("cliente") || "",
+      maquinaId: searchParams.get("maquina") || "",
+      status: searchParams.get("status") || "all",
+      startDate: searchParams.get("inicio") ? parseISO(searchParams.get("inicio")!) : startOfMonth(new Date()),
+      endDate: searchParams.get("fim") ? parseISO(searchParams.get("fim")!) : new Date(),
+      operadorId: searchParams.get("operador") || "all",
+    }));
 
-    const [filters, setFilters] = useState<FilterState>(() => getFiltersFromSearchParams(searchParams));
+    // Stable primitive key built from filters (avoid object identity issues in deps)
+    const filtersKey = useMemo(() => JSON.stringify({
+      c: filters.clienteId,
+      m: filters.maquinaId,
+      s: filters.status,
+      o: filters.operadorId,
+      i: filters.startDate?.toISOString() || "",
+      f: filters.endDate?.toISOString() || "",
+    }), [filters]);
 
-    const fetchData = useCallback(async (isLoadMore = false) => {
-      if (!isLoadMore) {
+    // Fetch data when filters change (page 0). Page is reset inside.
+    useEffect(() => {
+      let cancelled = false;
+      const run = async () => {
         setLoading(true);
         setPage(0);
-      } else {
-        setLoadingMore(true);
-      }
 
-      const currentPage = isLoadMore ? page + 1 : 0;
-      let query = supabase
-        .from("vw_leituras_com_anterior")
-        .select("*", { count: 'exact' });
+        let query = supabase
+          .from("vw_leituras_com_anterior")
+          .select("*", { count: 'exact' });
 
-      if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
-      if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
-       if (filters.status !== "all") query = query.eq("status", filters.status as any);
-      if (filters.operadorId !== "all") query = query.eq("usuario_id", filters.operadorId);
-      if (filters.startDate) query = query.gte("data_leitura", filters.startDate.toISOString());
-      if (filters.endDate) query = query.lte("data_leitura", endOfDay(filters.endDate).toISOString());
+        if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
+        if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
+        if (filters.status !== "all") query = query.eq("status", filters.status as any);
+        if (filters.operadorId !== "all") query = query.eq("usuario_id", filters.operadorId);
+        if (filters.startDate) query = query.gte("data_leitura", filters.startDate.toISOString());
+        if (filters.endDate) query = query.lte("data_leitura", endOfDay(filters.endDate).toISOString());
 
-      const { data, count } = await query
-        .order("data_leitura", { ascending: false })
-        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+        const { data, count } = await query
+          .order("data_leitura", { ascending: false })
+          .range(0, PAGE_SIZE - 1);
 
-      const mapped = (data || []).map(l => {
-        const variacao = l.data_leitura_previa ? calcularVariacao(
-          { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
-          { 
-            valor_faturado: Number(l.valor_faturado_previo), 
-            pelucias_saidas: l.pelucias_saidas_previa, 
-            data_leitura: l.data_leitura_previa,
-            data_leitura_previa: l.data_leitura_pre_previa
-          }
-        ) : null;
-        return { ...l, variacao };
-      });
+        if (cancelled) return;
 
-      if (isLoadMore) {
-        setItems(prev => [...prev, ...mapped]);
-        setPage(currentPage);
-      } else {
+        const mapped = (data || []).map(l => {
+          const variacao = l.data_leitura_previa ? calcularVariacao(
+            { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+            {
+              valor_faturado: Number(l.valor_faturado_previo),
+              pelucias_saidas: l.pelucias_saidas_previa,
+              data_leitura: l.data_leitura_previa,
+              data_leitura_previa: l.data_leitura_pre_previa,
+            }
+          ) : null;
+          return { ...l, variacao };
+        });
+
         setItems(mapped);
-      }
+        setHasMore(count ? mapped.length < count : false);
+        setLoading(false);
+      };
+      run();
+      return () => { cancelled = true; };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filtersKey]);
 
-      setHasMore(count ? (isLoadMore ? items.length + mapped.length : mapped.length) < count : false);
-      setLoading(false);
-      setLoadingMore(false);
-    }, [filters, page, items.length]);
-
+    // Sync filters -> URL (one-way: state -> URL). Compare via string to avoid loops.
     useEffect(() => {
-      const newFilters = getFiltersFromSearchParams(searchParams);
-      const currentFiltersJson = JSON.stringify(filters);
-      const newFiltersJson = JSON.stringify(newFilters);
-      
-      if (newFiltersJson !== currentFiltersJson) {
-        setFilters(newFilters);
-      }
-    }, [searchParams, getFiltersFromSearchParams]);
-
-    useEffect(() => {
-      fetchData();
-      
-      // Update URL immediately when filters change
       const params: Record<string, string> = {};
       if (filters.clienteId) params.cliente = filters.clienteId;
       if (filters.maquinaId) params.maquina = filters.maquinaId;
@@ -143,12 +135,56 @@ import { calcularVariacao } from "@/utils/reading-calculations";
       if (filters.operadorId !== "all") params.operador = filters.operadorId;
       if (filters.startDate) params.inicio = filters.startDate.toISOString();
       if (filters.endDate) params.fim = filters.endDate.toISOString();
-      
-      const currentParams = Object.fromEntries(searchParams.entries());
-      if (JSON.stringify(params) !== JSON.stringify(currentParams)) {
+
+      const current = new URLSearchParams(window.location.search);
+      const currentObj: Record<string, string> = {};
+      current.forEach((v, k) => { currentObj[k] = v; });
+      if (JSON.stringify(params) !== JSON.stringify(currentObj)) {
         setSearchParams(params, { replace: true });
       }
-    }, [filters, fetchData, searchParams, setSearchParams]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filtersKey]);
+
+    const loadMore = useCallback(async () => {
+      setLoadingMore(true);
+      const nextPage = page + 1;
+
+      let query = supabase
+        .from("vw_leituras_com_anterior")
+        .select("*", { count: 'exact' });
+
+      if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
+      if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
+      if (filters.status !== "all") query = query.eq("status", filters.status as any);
+      if (filters.operadorId !== "all") query = query.eq("usuario_id", filters.operadorId);
+      if (filters.startDate) query = query.gte("data_leitura", filters.startDate.toISOString());
+      if (filters.endDate) query = query.lte("data_leitura", endOfDay(filters.endDate).toISOString());
+
+      const { data, count } = await query
+        .order("data_leitura", { ascending: false })
+        .range(nextPage * PAGE_SIZE, (nextPage + 1) * PAGE_SIZE - 1);
+
+      const mapped = (data || []).map(l => {
+        const variacao = l.data_leitura_previa ? calcularVariacao(
+          { valor_faturado: Number(l.valor_faturado), pelucias_saidas: l.pelucias_saidas, data_leitura: l.data_leitura },
+          {
+            valor_faturado: Number(l.valor_faturado_previo),
+            pelucias_saidas: l.pelucias_saidas_previa,
+            data_leitura: l.data_leitura_previa,
+            data_leitura_previa: l.data_leitura_pre_previa,
+          }
+        ) : null;
+        return { ...l, variacao };
+      });
+
+      setItems(prev => {
+        const merged = [...prev, ...mapped];
+        setHasMore(count ? merged.length < count : false);
+        return merged;
+      });
+      setPage(nextPage);
+      setLoadingMore(false);
+    }, [filters, page]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -314,7 +350,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
             <div className="flex justify-center pt-4">
               <Button 
                 variant="outline" 
-                onClick={() => fetchData(true)} 
+                onClick={() => loadMore()} 
                 disabled={loadingMore}
                 className="w-full sm:w-auto"
               >
