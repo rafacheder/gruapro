@@ -30,7 +30,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
    const [batchSelection, setBatchSelection] = useState<{ids: string[], clienteId: string} | null>(null);
  
-   const showFinancials = canSeeFinancials(role);
+    const showFinancials = true;
    const [items, setItems] = useState<any[]>([]);
    const isAdmin = role === 'admin' || role === 'master';
  
