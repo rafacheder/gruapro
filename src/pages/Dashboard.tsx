@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/PageHeader";
-import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatBRL, formatNumber } from "@/lib/format";
 import { 
   ClipboardList, Users, Cpu, TrendingUp, Plus, Wallet, Package 
