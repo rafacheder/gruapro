@@ -172,6 +172,7 @@ export type Database = {
         Row: {
           aprovada_por: string | null
           cliente_id: string
+          cliente_nome: string | null
           contador_entrada_anterior: number | null
           contador_entrada_atual: number | null
           contador_saida_anterior: number | null
@@ -179,7 +180,9 @@ export type Database = {
           created_at: string
           data_leitura: string
           id: string
+          maquina_codigo: string | null
           maquina_id: string
+          maquina_modelo: string | null
           observacoes: string | null
           offline_synced: boolean
           pelucias_saidas: number
@@ -195,6 +198,7 @@ export type Database = {
         Insert: {
           aprovada_por?: string | null
           cliente_id: string
+          cliente_nome?: string | null
           contador_entrada_anterior?: number | null
           contador_entrada_atual?: number | null
           contador_saida_anterior?: number | null
@@ -202,7 +206,9 @@ export type Database = {
           created_at?: string
           data_leitura?: string
           id?: string
+          maquina_codigo?: string | null
           maquina_id: string
+          maquina_modelo?: string | null
           observacoes?: string | null
           offline_synced?: boolean
           pelucias_saidas?: number
@@ -218,6 +224,7 @@ export type Database = {
         Update: {
           aprovada_por?: string | null
           cliente_id?: string
+          cliente_nome?: string | null
           contador_entrada_anterior?: number | null
           contador_entrada_atual?: number | null
           contador_saida_anterior?: number | null
@@ -225,7 +232,9 @@ export type Database = {
           created_at?: string
           data_leitura?: string
           id?: string
+          maquina_codigo?: string | null
           maquina_id?: string
+          maquina_modelo?: string | null
           observacoes?: string | null
           offline_synced?: boolean
           pelucias_saidas?: number
@@ -628,7 +637,7 @@ export type Database = {
       }
       maquinas_operador: {
         Row: {
-          ativo: Database["public"]["Enums"]["maquina_status"] | null
+          ativo: boolean | null
           cliente_id: string | null
           codigo_identificacao: string | null
           created_at: string | null
@@ -638,7 +647,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
-          ativo?: Database["public"]["Enums"]["maquina_status"] | null
+          ativo?: never
           cliente_id?: string | null
           codigo_identificacao?: string | null
           created_at?: string | null
@@ -648,7 +657,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          ativo?: Database["public"]["Enums"]["maquina_status"] | null
+          ativo?: never
           cliente_id?: string | null
           codigo_identificacao?: string | null
           created_at?: string | null
@@ -810,6 +819,14 @@ export type Database = {
           ativo: boolean
           codigo_identificacao: string
           modelo: string
+        }[]
+      }
+      get_public_machine_v2: {
+        Args: { machine_id: string }
+        Returns: {
+          codigo_identificacao: string
+          modelo: string
+          status: string
         }[]
       }
       get_user_role: {
