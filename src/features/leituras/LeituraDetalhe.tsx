@@ -6,10 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
- import { 
-   ArrowLeft, 
-    FileDown,
-    Printer,
+ import {
+   ArrowLeft,
+   FileDown,
+   Printer,
+   Pencil,
    Loader2, 
    TrendingDown, 
    TrendingUp, 
@@ -192,7 +193,7 @@ export default function LeituraDetalhe() {
          <PageHeader
            title={leitura.clientes?.nome_ponto}
            description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
-            action={(
+            action={
               <div className="flex gap-2">
                 {(leitura.usuario_id === user?.id || role === 'admin' || role === 'master') && (
                   <Button variant="outline" size="icon" onClick={() => navigate(`/leituras/${id}/editar`)}>
@@ -227,8 +228,8 @@ export default function LeituraDetalhe() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-             </div>
-           }
+              </div>
+            }
          />
 
        <Card className="p-5 bg-card mb-4 space-y-3 relative overflow-hidden">
