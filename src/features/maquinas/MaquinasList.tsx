@@ -33,14 +33,14 @@ export default function MaquinasList() {
        const { data: { user } } = await supabase.auth.getUser();
        if (!user) return;
 
-       const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
+        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id }) as { data: string };
        const isOperator = roleData === 'usuario';
 
         let query;
         if (isOperator) {
           query = supabase
             .from("maquinas_operador")
-            .select("id, codigo_identificacao, modelo, ativo, cliente_id, cliente_nome, cliente_cidade");
+            .select("id, codigo_identificacao, modelo, status, cliente_id, cliente_nome, cliente_cidade");
         } else {
           query = supabase
             .from("maquinas")
@@ -53,7 +53,6 @@ export default function MaquinasList() {
           if (isOperator) {
             return {
               ...m,
-              status: m.ativo ? "ativa" : "inativa",
               clientes: {
                 nome_ponto: m.cliente_nome,
                 cidade: m.cliente_cidade
