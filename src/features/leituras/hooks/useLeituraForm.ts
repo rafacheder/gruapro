@@ -113,7 +113,8 @@ export function useLeituraForm() {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
  
-       const table = isOperator ? "maquinas_operador" : "maquinas";
+       // @ts-ignore - dynamic table name based on role
+       const table: any = isOperator ? "maquinas_operador" : "maquinas";
        const { data } = await supabase
          .from(table)
          .select(`
@@ -125,6 +126,7 @@ export function useLeituraForm() {
              ${isOperator ? "" : "percentual_comissao"}
            )
          `)
+         // @ts-ignore - dynamic column name
          .eq(isOperator ? "ativo" : "status", isOperator ? true : "ativa")
          .order("codigo_identificacao");
  
@@ -132,8 +134,8 @@ export function useLeituraForm() {
          const mapped = data.map((m: any) => ({
            ...m,
            clientes: {
-             nome_ponto: m.clientes?.nome_ponto,
-             percentual_comissao: m.clientes?.percentual_comissao || 0
+             nome_ponto: Array.isArray(m.clientes) ? m.clientes[0]?.nome_ponto : m.clientes?.nome_ponto,
+             percentual_comissao: (Array.isArray(m.clientes) ? m.clientes[0]?.percentual_comissao : m.clientes?.percentual_comissao) || 0
            }
          }));
          setMaquinas(mapped as MaquinaOpt[]);
