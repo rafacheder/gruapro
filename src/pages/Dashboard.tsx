@@ -26,7 +26,7 @@ export default function Dashboard() {
     loadingAlerts
   } = useDashboardStats(role);
 
-  const showFinancials = canSeeFinancials(role);
+  const showFinancials = role === "admin" || role === "master";
   const firstName = (nome || "").split(" ")[0] || "Olá";
 
   return (
@@ -48,17 +48,15 @@ export default function Dashboard() {
         }
       />
 
-      {showFinancials && (
-        <PeriodFilter 
-          periodType={periodType}
-          setPeriodType={setPeriodType}
-          customRange={customRange}
-          setCustomRange={setCustomRange}
-        />
-      )}
+      <PeriodFilter
+        periodType={periodType}
+        setPeriodType={setPeriodType}
+        customRange={customRange}
+        setCustomRange={setCustomRange}
+      />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        {showFinancials ? (
+        {showFinancials && (
           <>
             <StatCard
               title="Faturamento Total"
@@ -76,44 +74,29 @@ export default function Dashboard() {
               value={loading ? "—" : formatBRL(stats?.liquidoMes || 0)}
               icon={TrendingUp}
             />
-            <StatCard
-              title="Total de Leituras"
-              value={loading ? "—" : formatNumber(stats?.leiturasMes || 0)}
-              icon={ClipboardList}
-            />
-            <StatCard
-              title="Pelúcias Saídas"
-              value={loading ? "—" : formatNumber(stats?.totalPelucias || 0)}
-              icon={Package}
-            />
-            <StatCard title="Clientes ativos" value={loading ? "—" : formatNumber(stats?.clientesAtivos || 0)} icon={Users} />
-            <StatCard title="Máquinas ativas" value={loading ? "—" : formatNumber(stats?.maquinasAtivas || 0)} icon={Cpu} />
-          </>
-        ) : (
-          <>
-            <StatCard
-              title="Suas leituras hoje"
-              value={loading ? "—" : formatNumber(stats?.minhasLeiturasHoje || 0)}
-              icon={ClipboardList}
-              accent
-            />
-            <StatCard
-              title="Clientes ativos"
-              value={loading ? "—" : formatNumber(stats?.clientesAtivos || 0)}
-              icon={Users}
-            />
-            <StatCard
-              title="Máquinas ativas"
-              value={loading ? "—" : formatNumber(stats?.maquinasAtivas || 0)}
-              icon={Cpu}
-            />
-            <StatCard
-              title="Pelúcias Saídas"
-              value={loading ? "—" : formatNumber(stats?.totalPelucias || 0)}
-              icon={Package}
-            />
           </>
         )}
+        <StatCard
+          title="Total de Leituras"
+          value={loading ? "—" : formatNumber(stats?.leiturasMes || 0)}
+          icon={ClipboardList}
+          accent={!showFinancials}
+        />
+        <StatCard
+          title="Pelúcias Saídas"
+          value={loading ? "—" : formatNumber(stats?.totalPelucias || 0)}
+          icon={Package}
+        />
+        <StatCard
+          title="Clientes ativos"
+          value={loading ? "—" : formatNumber(stats?.clientesAtivos || 0)}
+          icon={Users}
+        />
+        <StatCard
+          title="Máquinas ativas"
+          value={loading ? "—" : formatNumber(stats?.maquinasAtivas || 0)}
+          icon={Cpu}
+        />
       </div>
 
       <Card className="mt-6 p-5 bg-gradient-surface border-border">
