@@ -638,30 +638,14 @@ export type Database = {
       maquinas_operador: {
         Row: {
           ativo: boolean | null
+          cliente_cidade: string | null
           cliente_id: string | null
+          cliente_nome: string | null
           codigo_identificacao: string | null
           created_at: string | null
           data_instalacao: string | null
           id: string | null
           modelo: string | null
-        }
-        Insert: {
-          ativo?: never
-          cliente_id?: string | null
-          codigo_identificacao?: string | null
-          created_at?: string | null
-          data_instalacao?: string | null
-          id?: string | null
-          modelo?: string | null
-        }
-        Update: {
-          ativo?: never
-          cliente_id?: string | null
-          codigo_identificacao?: string | null
-          created_at?: string | null
-          data_instalacao?: string | null
-          id?: string | null
-          modelo?: string | null
         }
         Relationships: [
           {
