@@ -84,7 +84,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
       const currentPage = isLoadMore ? page + 1 : 0;
       let query = supabase
         .from("vw_leituras_com_anterior")
-        .select("*, maquinas(codigo_identificacao), clientes(nome_ponto)", { count: 'exact' });
+        .select("*", { count: 'exact' });
 
       if (filters.clienteId) query = query.eq("cliente_id", filters.clienteId);
       if (filters.maquinaId) query = query.eq("maquina_id", filters.maquinaId);
@@ -251,9 +251,9 @@ import { calcularVariacao } from "@/utils/reading-calculations";
                   'bg-muted'
                 }`} />
                 <div className="min-w-0 flex-1 pl-1">
-                  <div className="text-sm font-semibold truncate">{l.clientes?.nome_ponto}</div>
+                  <div className="text-sm font-semibold truncate">{l.cliente_nome || l.clientes?.nome_ponto}</div>
                   <div className="text-xs text-muted-foreground truncate">
-                    {l.maquinas?.codigo_identificacao} • {formatDateTime(l.data_leitura)}
+                    {l.maquina_codigo || l.maquinas?.codigo_identificacao} • {formatDateTime(l.data_leitura)}
                   </div>
                   <div className="flex items-center gap-3 mt-1">
                     <div className="text-xs text-muted-foreground">
