@@ -47,8 +47,8 @@
           .eq("ativo", true)
           .order("nome_ponto");
        
-       if (clientsData) {
-         setClientes(clientsData.map(c => ({ value: c.id, label: c.nome_ponto })));
+        if (clientsData && Array.isArray(clientsData)) {
+          setClientes((clientsData as any[]).map(c => ({ value: c.id, label: c.nome_ponto })));
        }
  
         // Fetch Machines - use view for operators
