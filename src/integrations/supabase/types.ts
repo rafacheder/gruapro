@@ -168,60 +168,9 @@ export type Database = {
           },
         ]
       }
-      leitura_pelucias_detalhe: {
-        Row: {
-          id: string
-          leitura_id: string
-          pelucia_tipo_id: string
-          quantidade: number
-        }
-        Insert: {
-          id?: string
-          leitura_id: string
-          pelucia_tipo_id: string
-          quantidade: number
-        }
-        Update: {
-          id?: string
-          leitura_id?: string
-          pelucia_tipo_id?: string
-          quantidade?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "leitura_pelucias_detalhe_leitura_id_fkey"
-            columns: ["leitura_id"]
-            isOneToOne: false
-            referencedRelation: "leituras"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leitura_pelucias_detalhe_leitura_id_fkey"
-            columns: ["leitura_id"]
-            isOneToOne: false
-            referencedRelation: "vw_leituras_com_anterior"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leitura_pelucias_detalhe_leitura_id_fkey"
-            columns: ["leitura_id"]
-            isOneToOne: false
-            referencedRelation: "vw_ultimas_leituras_por_maquina"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leitura_pelucias_detalhe_pelucia_tipo_id_fkey"
-            columns: ["pelucia_tipo_id"]
-            isOneToOne: false
-            referencedRelation: "pelucias_tipos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       leituras: {
         Row: {
           aprovada_por: string | null
-          assinatura_base64: string | null
           cliente_id: string
           contador_entrada_anterior: number | null
           contador_entrada_atual: number | null
@@ -245,7 +194,6 @@ export type Database = {
         }
         Insert: {
           aprovada_por?: string | null
-          assinatura_base64?: string | null
           cliente_id: string
           contador_entrada_anterior?: number | null
           contador_entrada_atual?: number | null
@@ -269,7 +217,6 @@ export type Database = {
         }
         Update: {
           aprovada_por?: string | null
-          assinatura_base64?: string | null
           cliente_id?: string
           contador_entrada_anterior?: number | null
           contador_entrada_atual?: number | null
@@ -300,10 +247,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leituras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {
@@ -357,46 +318,11 @@ export type Database = {
             referencedRelation: "maquinas"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      maquina_estoque: {
-        Row: {
-          id: string
-          maquina_id: string
-          pelucia_tipo_id: string
-          quantidade_atual: number
-          quantidade_minima: number
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          maquina_id: string
-          pelucia_tipo_id: string
-          quantidade_atual?: number
-          quantidade_minima?: number
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          maquina_id?: string
-          pelucia_tipo_id?: string
-          quantidade_atual?: number
-          quantidade_minima?: number
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "maquina_estoque_maquina_id_fkey"
+            foreignKeyName: "manutencoes_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
-            referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maquina_estoque_pelucia_tipo_id_fkey"
-            columns: ["pelucia_tipo_id"]
-            isOneToOne: false
-            referencedRelation: "pelucias_tipos"
+            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
         ]
@@ -453,6 +379,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maquinas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
             referencedColumns: ["id"]
           },
         ]
@@ -556,6 +489,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pagamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pagamentos_registrado_por_profiles_fkey"
             columns: ["registrado_por"]
             isOneToOne: false
@@ -563,30 +503,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      pelucias_tipos: {
-        Row: {
-          ativo: boolean
-          created_at: string
-          custo_unitario: number
-          id: string
-          nome: string
-        }
-        Insert: {
-          ativo?: boolean
-          created_at?: string
-          custo_unitario?: number
-          id?: string
-          nome: string
-        }
-        Update: {
-          ativo?: boolean
-          created_at?: string
-          custo_unitario?: number
-          id?: string
-          nome?: string
-        }
-        Relationships: []
       }
       permissions: {
         Row: {
@@ -639,51 +555,6 @@ export type Database = {
         }
         Relationships: []
       }
-      reposicoes: {
-        Row: {
-          data_reposicao: string
-          id: string
-          maquina_id: string
-          observacoes: string | null
-          pelucia_tipo_id: string
-          quantidade: number
-          usuario_id: string
-        }
-        Insert: {
-          data_reposicao?: string
-          id?: string
-          maquina_id: string
-          observacoes?: string | null
-          pelucia_tipo_id: string
-          quantidade: number
-          usuario_id: string
-        }
-        Update: {
-          data_reposicao?: string
-          id?: string
-          maquina_id?: string
-          observacoes?: string | null
-          pelucia_tipo_id?: string
-          quantidade?: number
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reposicoes_maquina_id_fkey"
-            columns: ["maquina_id"]
-            isOneToOne: false
-            referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reposicoes_pelucia_tipo_id_fkey"
-            columns: ["pelucia_tipo_id"]
-            isOneToOne: false
-            referencedRelation: "pelucias_tipos"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -707,10 +578,105 @@ export type Database = {
       }
     }
     Views: {
+      clientes_operador: {
+        Row: {
+          ativo: boolean | null
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          complemento: string | null
+          created_at: string | null
+          estado: string | null
+          id: string | null
+          nome_ponto: string | null
+          nome_responsavel: string | null
+          numero: string | null
+          rua: string | null
+          telefone_responsavel: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string | null
+          nome_ponto?: string | null
+          nome_responsavel?: string | null
+          numero?: string | null
+          rua?: string | null
+          telefone_responsavel?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          created_at?: string | null
+          estado?: string | null
+          id?: string | null
+          nome_ponto?: string | null
+          nome_responsavel?: string | null
+          numero?: string | null
+          rua?: string | null
+          telefone_responsavel?: string | null
+        }
+        Relationships: []
+      }
+      maquinas_operador: {
+        Row: {
+          ativo: Database["public"]["Enums"]["maquina_status"] | null
+          cliente_id: string | null
+          codigo_identificacao: string | null
+          created_at: string | null
+          data_instalacao: string | null
+          id: string | null
+          modelo: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: Database["public"]["Enums"]["maquina_status"] | null
+          cliente_id?: string | null
+          codigo_identificacao?: string | null
+          created_at?: string | null
+          data_instalacao?: string | null
+          id?: string | null
+          modelo?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: Database["public"]["Enums"]["maquina_status"] | null
+          cliente_id?: string | null
+          codigo_identificacao?: string | null
+          created_at?: string | null
+          data_instalacao?: string | null
+          id?: string | null
+          modelo?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maquinas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maquinas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vw_leituras_com_anterior: {
         Row: {
           aprovada_por: string | null
-          assinatura_base64: string | null
           cliente_id: string | null
           contador_entrada_anterior: number | null
           contador_entrada_anterior_val: number | null
@@ -749,10 +715,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leituras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {
@@ -767,7 +747,6 @@ export type Database = {
       vw_ultimas_leituras_por_maquina: {
         Row: {
           aprovada_por: string | null
-          assinatura_base64: string | null
           cliente_id: string | null
           created_at: string | null
           data_leitura: string | null
@@ -794,10 +773,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leituras_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes_operador"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leituras_maquina_id_fkey"
+            columns: ["maquina_id"]
+            isOneToOne: false
+            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {
@@ -811,6 +804,14 @@ export type Database = {
       }
     }
     Functions: {
+      get_public_machine: {
+        Args: { machine_id: string }
+        Returns: {
+          ativo: boolean
+          codigo_identificacao: string
+          modelo: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
