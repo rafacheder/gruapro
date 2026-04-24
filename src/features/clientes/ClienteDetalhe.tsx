@@ -25,8 +25,8 @@ export default function ClienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { role } = useAuth();
-  const canEdit = canManageData(role);
-  const showFinancials = canSeeFinancials(role);
+   const canEdit = true;
+   const showFinancials = true;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cliente, setCliente] = useState<any>(null);
@@ -65,16 +65,6 @@ export default function ClienteDetalhe() {
       toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há máquinas vinculadas)");
     }
   };
-
-  if (isUser(role)) {
-    return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold mb-2">Acesso Restrito</h2>
-        <p className="text-muted-foreground mb-4">Você não tem permissão para ver detalhes de clientes.</p>
-        <Button onClick={() => navigate("/clientes")}>Voltar para Lista</Button>
-      </div>
-    );
-  }
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!cliente) return <div>Cliente não encontrado</div>;

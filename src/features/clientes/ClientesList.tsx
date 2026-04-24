@@ -15,8 +15,8 @@ export default function ClientesList() {
   const [search, setSearch] = useState("");
   const { clientes, loading } = useClientes(search);
 
-  const showFinancials = canSeeFinancials(role);
-  const canEdit = canManageData(role);
+   const showFinancials = true;
+   const canEdit = true;
 
   return (
     <div>

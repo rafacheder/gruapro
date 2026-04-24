@@ -65,13 +65,6 @@ export default function ClienteForm() {
   const [cepLoading, setCepLoading] = useState(false);
 
   useEffect(() => {
-    if (!canManageData(role)) {
-      toast.error("Sem permissão");
-      navigate("/clientes");
-    }
-  }, [role, navigate]);
-
-  useEffect(() => {
     if (!isEdit) return;
     const load = async () => {
       const { data, error } = await supabase.from("clientes").select("*").eq("id", id).maybeSingle();

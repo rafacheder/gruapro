@@ -22,7 +22,7 @@ interface Maquina {
 export default function MaquinasList() {
   const navigate = useNavigate();
   const { role } = useAuth();
-  const canEdit = canManageData(role);
+   const canEdit = true;
   const [items, setItems] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState("");
@@ -30,39 +30,16 @@ export default function MaquinasList() {
 
    useEffect(() => {
      const load = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
-
-        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id }) as { data: string };
-       const isOperator = roleData === 'usuario';
-
-        let query;
-        if (isOperator) {
-          query = supabase
-            .from("maquinas_operador")
-            .select("id, codigo_identificacao, modelo, status, cliente_id, cliente_nome, cliente_cidade");
-        } else {
-          query = supabase
-            .from("maquinas")
-            .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)");
-        }
-
-        const { data } = await query.order("codigo_identificacao");
-
-        const mapped = (data || []).map((m: any) => {
-          if (isOperator) {
-            return {
-              ...m,
-              clientes: {
-                nome_ponto: m.cliente_nome,
-                cidade: m.cliente_cidade
-              }
-            };
-          }
-          return m;
-        });
-
-       setItems((mapped as unknown as Maquina[]) || []);
+       const { data, error } = await supabase
+         .from("maquinas")
+         .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")
+         .order("codigo_identificacao");
+       
+       if (error) {
+         console.error("Erro ao carregar máquinas:", error);
+       } else {
+         setItems((data as unknown as Maquina[]) || []);
+       }
        setLoading(false);
      };
      load();

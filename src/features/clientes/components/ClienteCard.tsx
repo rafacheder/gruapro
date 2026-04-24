@@ -27,11 +27,9 @@ export function ClienteCard({ cliente, showFinancials }: ClienteCardProps) {
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
         <div className="flex items-center gap-2"><MapPin className="h-3 w-3" /> {cliente.cidade}/{cliente.estado}</div>
         <div className="flex items-center gap-2"><Phone className="h-3 w-3" /> {cliente.telefone_responsavel}</div>
-        {showFinancials && (
-          <div className="flex items-center gap-2 text-accent">
-            <Percent className="h-3 w-3" /> Comissão: {cliente.percentual_comissao}%
-          </div>
-        )}
+         <div className="flex items-center gap-2 text-accent">
+           <Percent className="h-3 w-3" /> Comissão: {cliente.percentual_comissao}%
+         </div>
       </div>
     </Card>
   );

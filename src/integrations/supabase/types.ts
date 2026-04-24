@@ -256,24 +256,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "leituras_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leituras_maquina_id_fkey"
-            columns: ["maquina_id"]
-            isOneToOne: false
-            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {
@@ -325,13 +311,6 @@ export type Database = {
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "manutencoes_maquina_id_fkey"
-            columns: ["maquina_id"]
-            isOneToOne: false
-            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
         ]
@@ -388,13 +367,6 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maquinas_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
             referencedColumns: ["id"]
           },
         ]
@@ -498,13 +470,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pagamentos_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "pagamentos_registrado_por_profiles_fkey"
             columns: ["registrado_por"]
             isOneToOne: false
@@ -587,84 +552,6 @@ export type Database = {
       }
     }
     Views: {
-      clientes_operador: {
-        Row: {
-          ativo: boolean | null
-          bairro: string | null
-          cep: string | null
-          cidade: string | null
-          complemento: string | null
-          created_at: string | null
-          estado: string | null
-          id: string | null
-          nome_ponto: string | null
-          nome_responsavel: string | null
-          numero: string | null
-          rua: string | null
-          telefone_responsavel: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
-          complemento?: string | null
-          created_at?: string | null
-          estado?: string | null
-          id?: string | null
-          nome_ponto?: string | null
-          nome_responsavel?: string | null
-          numero?: string | null
-          rua?: string | null
-          telefone_responsavel?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          bairro?: string | null
-          cep?: string | null
-          cidade?: string | null
-          complemento?: string | null
-          created_at?: string | null
-          estado?: string | null
-          id?: string | null
-          nome_ponto?: string | null
-          nome_responsavel?: string | null
-          numero?: string | null
-          rua?: string | null
-          telefone_responsavel?: string | null
-        }
-        Relationships: []
-      }
-      maquinas_operador: {
-        Row: {
-          cliente_cidade: string | null
-          cliente_id: string | null
-          cliente_nome: string | null
-          codigo_identificacao: string | null
-          created_at: string | null
-          data_instalacao: string | null
-          id: string | null
-          modelo: string | null
-          qr_code_url: string | null
-          status: Database["public"]["Enums"]["maquina_status"] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "maquinas_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "maquinas_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       vw_leituras_com_anterior: {
         Row: {
           aprovada_por: string | null
@@ -709,24 +596,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "leituras_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leituras_maquina_id_fkey"
-            columns: ["maquina_id"]
-            isOneToOne: false
-            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {
@@ -767,24 +640,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "leituras_cliente_id_fkey"
-            columns: ["cliente_id"]
-            isOneToOne: false
-            referencedRelation: "clientes_operador"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "leituras_maquina_id_fkey"
             columns: ["maquina_id"]
             isOneToOne: false
             referencedRelation: "maquinas"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "leituras_maquina_id_fkey"
-            columns: ["maquina_id"]
-            isOneToOne: false
-            referencedRelation: "maquinas_operador"
             referencedColumns: ["id"]
           },
           {

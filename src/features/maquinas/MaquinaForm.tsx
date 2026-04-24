@@ -51,13 +51,6 @@ export default function MaquinaForm() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!canManageData(role)) {
-      toast.error("Sem permissão");
-      navigate("/maquinas");
-    }
-  }, [role, navigate]);
-
-  useEffect(() => {
     supabase.from("clientes").select("id, nome_ponto, cidade").eq("ativo", true).order("nome_ponto").then(({ data }) => {
       setClientes(data || []);
     });

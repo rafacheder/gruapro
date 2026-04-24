@@ -107,56 +107,34 @@ export function useLeituraForm() {
 
    useEffect(() => {
      const fetchMaquinas = async () => {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
+       const { data, error } = await supabase
+         .from("maquinas")
+         .select(`
+           id, 
+           codigo_identificacao, 
+           cliente_id, 
+           clientes (
+             nome_ponto, 
+             percentual_comissao
+           )
+         `)
+         .eq("status", "ativa")
+         .order("codigo_identificacao");
  
-        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id }) as { data: string };
-       const isOperator = roleData === 'usuario';
- 
-        let query;
-        if (isOperator) {
-          query = supabase
-            .from("maquinas_operador")
-            .select("id, codigo_identificacao, cliente_id, cliente_nome")
-            .eq("status", "ativa");
-        } else {
-          query = supabase
-            .from("maquinas")
-            .select(`
-              id, 
-              codigo_identificacao, 
-              cliente_id, 
-              clientes (
-                nome_ponto, 
-                percentual_comissao
-              )
-            `)
-            .eq("status", "ativa");
-        }
-
-        const { data } = await query.order("codigo_identificacao");
-
-        if (data) {
-          const mapped = data.map((m: any) => {
-            if (isOperator) {
-              return {
-                ...m,
-                clientes: {
-                  nome_ponto: m.cliente_nome,
-                  percentual_comissao: 0 // Operator doesn't see commission
-                }
-              };
-            }
-            return {
-              ...m,
-              clientes: {
-                nome_ponto: m.clientes?.nome_ponto,
-                percentual_comissao: m.clientes?.percentual_comissao || 0
-              }
-            };
-          });
-          setMaquinas(mapped as MaquinaOpt[]);
-        }
+       if (error) {
+         console.error("Erro ao carregar máquinas:", error);
+       } else if (data) {
+         const mapped = data.map((m: any) => ({
+           id: m.id,
+           codigo_identificacao: m.codigo_identificacao,
+           cliente_id: m.cliente_id,
+           clientes: {
+             nome_ponto: m.clientes?.nome_ponto,
+             percentual_comissao: m.clientes?.percentual_comissao || 0
+           }
+         }));
+         setMaquinas(mapped as MaquinaOpt[]);
+       }
      };
      fetchMaquinas();
    }, []);

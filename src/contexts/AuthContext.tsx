@@ -77,13 +77,13 @@ export function useAuth() {
   return ctx;
 }
 
-export function canManageData(role: AppRole | null) {
-  return role === "master" || role === "admin";
-}
-
-export function canSeeFinancials(role: AppRole | null) {
-  return role === "master" || role === "admin";
-}
+ export function canManageData(role: AppRole | null) {
+   return role === "master" || role === "admin" || role === "usuario";
+ }
+ 
+ export function canSeeFinancials(role: AppRole | null) {
+   return role === "master" || role === "admin" || role === "usuario";
+ }
 
 export function isUser(role: AppRole | null) {
   return role === "usuario";
