@@ -28,17 +28,32 @@ export default function MaquinasList() {
    const [search, setSearch] = useState("");
    const deferredSearch = useDeferredValue(search);
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("maquinas")
-        .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")
-        .order("codigo_identificacao");
-      setItems((data as unknown as Maquina[]) || []);
-      setLoading(false);
-    };
-    load();
-  }, []);
+   useEffect(() => {
+     const load = async () => {
+       const { data: { user } } = await supabase.auth.getUser();
+       if (!user) return;
+
+       const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
+       const isOperator = roleData === 'usuario';
+
+       // @ts-ignore - dynamic table name
+       const table = isOperator ? "maquinas_operador" : "maquinas";
+       const { data } = await supabase
+         .from(table)
+         .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")
+         .order("codigo_identificacao");
+
+       const mapped = (data || []).map((m: any) => ({
+         ...m,
+         // If it's the view, it doesn't have the status enum column but the boolean 'ativo'
+         status: m.status || (m.ativo ? "ativa" : "inativa")
+       }));
+
+       setItems((mapped as unknown as Maquina[]) || []);
+       setLoading(false);
+     };
+     load();
+   }, []);
 
    const filtered = useMemo(() => {
      const s = deferredSearch.toLowerCase();

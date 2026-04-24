@@ -25,16 +25,11 @@ export function useClientes(search: string) {
        const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: user.id });
        const isOperator = roleData === 'usuario';
  
-       // @ts-ignore
-       const table: any = isOperator ? "clientes_operador" : "clientes";
-       const columns = isOperator 
-         ? "id, nome_ponto, nome_responsavel, telefone_responsavel, cidade, estado, ativo"
-         : "id, nome_ponto, nome_responsavel, telefone_responsavel, cidade, estado, percentual_comissao, ativo";
- 
-       const { data } = await supabase
-         .from(table)
-         .select(columns)
-         .order("nome_ponto");
+        // @ts-ignore - dynamic table name
+        const table = isOperator ? "clientes_operador" : "clientes";
+        let query = supabase.from(table).select("*");
+
+        const { data } = await query.order("nome_ponto");
  
        if (data) {
          const mapped = data.map((c: any) => ({
