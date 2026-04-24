@@ -24,9 +24,9 @@ import { logAudit } from "@/lib/audit";
 export default function ClienteDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useAuth();
-   const canEdit = true;
-   const showFinancials = true;
+  const { role, user } = useAuth();
+  const canEdit = role !== 'usuario';
+  const showFinancials = true;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [cliente, setCliente] = useState<any>(null);

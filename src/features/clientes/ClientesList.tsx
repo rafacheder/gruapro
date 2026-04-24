@@ -11,12 +11,12 @@ import { ClienteCard } from "./components/ClienteCard";
 
 export default function ClientesList() {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const [search, setSearch] = useState("");
   const { clientes, loading } = useClientes(search);
 
-   const showFinancials = true;
-   const canEdit = true;
+  const showFinancials = true;
+  const canEdit = role !== 'usuario';
 
   return (
     <div>

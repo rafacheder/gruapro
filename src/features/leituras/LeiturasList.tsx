@@ -287,7 +287,7 @@ import { calcularVariacao } from "@/utils/reading-calculations";
                    >
                      {l.status}
                    </Badge>
-                   {isAdmin && l.status === 'pendente' && selectedIds.length === 0 && (
+                    {l.status === 'pendente' && selectedIds.length === 0 && (
                      <Button
                        size="sm"
                        variant="ghost"

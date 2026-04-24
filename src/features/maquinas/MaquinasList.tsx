@@ -21,8 +21,8 @@ interface Maquina {
 
 export default function MaquinasList() {
   const navigate = useNavigate();
-  const { role } = useAuth();
-   const canEdit = true;
+  const { role, user } = useAuth();
+  const canEdit = role !== 'usuario';
   const [items, setItems] = useState<Maquina[]>([]);
   const [loading, setLoading] = useState(true);
    const [search, setSearch] = useState("");

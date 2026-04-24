@@ -6,10 +6,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
- import { 
-   ArrowLeft, 
-    FileDown,
-    Printer,
+ import {
+   ArrowLeft,
+   FileDown,
+   Printer,
+   Pencil,
    Loader2, 
    TrendingDown, 
    TrendingUp, 
@@ -37,7 +38,7 @@ import { toast } from "sonner";
 export default function LeituraDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role, nome } = useAuth();
+  const { role, nome, user } = useAuth();
   const showFinancials = canSeeFinancials(role);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -192,18 +193,23 @@ export default function LeituraDetalhe() {
          <PageHeader
            title={leitura.clientes?.nome_ponto}
            description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
-           action={
-             <div className="flex gap-2">
-               {leitura.status === 'pendente' && (role === 'admin' || role === 'master') && (
-                 <Button 
-                   onClick={() => setPaymentDialogOpen(true)}
-                   variant="outline"
-                   className="border-success text-success hover:bg-success hover:text-white"
-                 >
-                   <CheckCircle2 className="h-4 w-4 mr-2" />
-                   Marcar como pago
-                 </Button>
-               )}
+            action={
+              <div className="flex gap-2">
+                {(leitura.usuario_id === user?.id || role === 'admin' || role === 'master') && (
+                  <Button variant="outline" size="icon" onClick={() => navigate(`/leituras/${id}/editar`)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                )}
+                {leitura.status === 'pendente' && (
+                  <Button 
+                    onClick={() => setPaymentDialogOpen(true)}
+                    variant="outline"
+                    className="border-success text-success hover:bg-success hover:text-white"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Marcar como pago
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
@@ -222,8 +228,8 @@ export default function LeituraDetalhe() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-             </div>
-           }
+              </div>
+            }
          />
 
        <Card className="p-5 bg-card mb-4 space-y-3 relative overflow-hidden">
