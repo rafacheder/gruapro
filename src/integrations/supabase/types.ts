@@ -637,7 +637,9 @@ export type Database = {
       }
       maquinas_operador: {
         Row: {
+          cliente_cidade: string | null
           cliente_id: string | null
+          cliente_nome: string | null
           codigo_identificacao: string | null
           created_at: string | null
           data_instalacao: string | null
@@ -645,26 +647,6 @@ export type Database = {
           modelo: string | null
           qr_code_url: string | null
           status: Database["public"]["Enums"]["maquina_status"] | null
-        }
-        Insert: {
-          cliente_id?: string | null
-          codigo_identificacao?: string | null
-          created_at?: string | null
-          data_instalacao?: string | null
-          id?: string | null
-          modelo?: string | null
-          qr_code_url?: string | null
-          status?: Database["public"]["Enums"]["maquina_status"] | null
-        }
-        Update: {
-          cliente_id?: string | null
-          codigo_identificacao?: string | null
-          created_at?: string | null
-          data_instalacao?: string | null
-          id?: string | null
-          modelo?: string | null
-          qr_code_url?: string | null
-          status?: Database["public"]["Enums"]["maquina_status"] | null
         }
         Relationships: [
           {
