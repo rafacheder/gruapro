@@ -644,7 +644,6 @@ export type Database = {
           data_instalacao: string | null
           id: string | null
           modelo: string | null
-          updated_at: string | null
         }
         Insert: {
           ativo?: never
@@ -654,7 +653,6 @@ export type Database = {
           data_instalacao?: string | null
           id?: string | null
           modelo?: string | null
-          updated_at?: string | null
         }
         Update: {
           ativo?: never
@@ -664,7 +662,6 @@ export type Database = {
           data_instalacao?: string | null
           id?: string | null
           modelo?: string | null
-          updated_at?: string | null
         }
         Relationships: [
           {
@@ -687,6 +684,7 @@ export type Database = {
         Row: {
           aprovada_por: string | null
           cliente_id: string | null
+          cliente_nome: string | null
           contador_entrada_anterior: number | null
           contador_entrada_anterior_val: number | null
           contador_entrada_atual: number | null
@@ -699,7 +697,9 @@ export type Database = {
           data_leitura_previa: string | null
           id: string | null
           leitura_previa_id: string | null
+          maquina_codigo: string | null
           maquina_id: string | null
+          maquina_modelo: string | null
           observacoes: string | null
           offline_synced: boolean | null
           pelucias_saidas: number | null
