@@ -309,8 +309,8 @@ export function useLeituraForm() {
         } else {
           const ids = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
           sessionStorage.removeItem("session_leituras");
-          if (ids.length > 1) navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
-          else navigate(`/leituras/${leitura.id}`);
+           if (ids.length > 1) navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+           else navigate(`/leituras/${leitura.id}?new=true`);
         }
       } else {
         const fotosData = [];
