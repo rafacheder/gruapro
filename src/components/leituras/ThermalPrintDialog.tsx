@@ -141,8 +141,9 @@
      </div>
    );
  
-   return (
-     <Dialog open={open} onOpenChange={onOpenChange}>
+    return (
+      <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
        <DialogContent className="max-w-[400px] max-h-[90vh] flex flex-col p-0">
          <DialogHeader className="p-6 pb-2">
            <DialogTitle className="flex items-center gap-2">
