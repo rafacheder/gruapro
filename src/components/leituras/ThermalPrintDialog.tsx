@@ -217,5 +217,8 @@
 
         <ThermalContent />
      </Dialog>
+ 
+     <ThermalContent />
+   </>
    );
  }
