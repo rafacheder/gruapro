@@ -216,10 +216,9 @@
           `}
         </style>
 
-        <ThermalContent />
-     </Dialog>
+      </Dialog>
  
-     <ThermalContent />
+      <ThermalContent />
    </>
    );
  }
