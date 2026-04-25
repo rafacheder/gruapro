@@ -19,8 +19,22 @@ import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
    History, 
    CheckCircle2,
    CreditCard,
-   ExternalLink
+   ExternalLink,
+   PlusCircle
  } from "lucide-react";
+ import { ThermalPrintDialog } from "@/components/leituras/ThermalPrintDialog";
+   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+   const isNewLeitura = new URLSearchParams(window.location.search).get("new") === "true";
+   const printData = leitura ? {
+     cliente_nome: leitura.clientes?.nome_ponto,
+     data_leitura: leitura.data_leitura,
+     leituras: [{
+       ...leitura,
+       maquina_codigo: leitura.maquinas?.codigo_identificacao,
+     }],
+     isSingle: true
+   } : null;
+ 
  import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
  import {
    DropdownMenu,
@@ -184,12 +198,66 @@ export default function LeituraDetalhe() {
 
   const valorAtual = Number(leitura.valor_faturado);
 
-  return (
-    <div>
-      <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate("/leituras")}>
-        <ArrowLeft className="h-4 w-4 mr-1" /> Leituras
-      </Button>
-       <div className="flex flex-col gap-4">
+   return (
+     <div>
+       <Button variant="ghost" size="sm" className="mb-3" onClick={() => navigate("/leituras")}>
+         <ArrowLeft className="h-4 w-4 mr-1" /> Leituras
+       </Button>
+ 
+       {isNewLeitura && (
+         <Card className="p-4 mb-6 border-success bg-success/5 animate-in fade-in slide-in-from-top-2 duration-300">
+           <div className="flex items-center gap-3 mb-4">
+             <div className="h-10 w-10 rounded-full bg-success/20 flex items-center justify-center">
+               <CheckCircle2 className="h-6 w-6 text-success" />
+             </div>
+             <div>
+               <h3 className="font-bold text-success">Leitura salva com sucesso!</h3>
+               <p className="text-sm text-success/80">O registro foi processado e já está disponível.</p>
+             </div>
+           </div>
+           <div className="flex flex-wrap gap-3">
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                 <Button disabled={generating} size="lg" className="bg-success hover:bg-success/90 text-white min-w-[140px]">
+                   {generating ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : <FileDown className="h-5 w-5 mr-2" />}
+                   Exportar PDF
+                   <ChevronDown className="h-4 w-4 ml-2 opacity-50" />
+                 </Button>
+               </DropdownMenuTrigger>
+               <DropdownMenuContent align="start" className="w-[200px]">
+                 <DropdownMenuItem onClick={() => handlePdf('a4')} className="py-3">
+                   <FileText className="h-4 w-4 mr-2" /> PDF Formato A4
+                 </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handlePdf('thermal')} className="py-3">
+                   <Printer className="h-4 w-4 mr-2" /> Formato Bobina (57mm)
+                 </DropdownMenuItem>
+               </DropdownMenuContent>
+             </DropdownMenu>
+ 
+             <Button 
+               size="lg" 
+               variant="default"
+               className="bg-primary hover:bg-primary/90 text-white min-w-[140px]"
+               onClick={() => setPrintDialogOpen(true)}
+             >
+               <Printer className="h-5 w-5 mr-2" />
+               Imprimir
+             </Button>
+ 
+             <Button 
+               size="lg"
+               variant="ghost"
+               className="text-muted-foreground hover:text-foreground"
+               onClick={() => navigate(`/leituras/nova?cliente_id=${leitura?.cliente_id}`)}
+             >
+               <PlusCircle className="h-5 w-5 mr-2" />
+               Ler próxima máquina
+             </Button>
+           </div>
+         </Card>
+       )}
+ 
+        <div className="flex flex-col gap-4">
          <PageHeader
            title={leitura.clientes?.nome_ponto}
            description={`${leitura.maquinas?.codigo_identificacao} • ${formatDateTime(leitura.data_leitura)}`}
@@ -210,24 +278,35 @@ export default function LeituraDetalhe() {
                     Marcar como pago
                   </Button>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
-                      {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
-                      Exportar
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handlePdf('a4')}>
-                      <FileDown className="h-4 w-4 mr-2" />
-                      PDF (A4)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePdf('thermal')}>
-                      <Printer className="h-4 w-4 mr-2" />
-                      Bobina Térmica (57mm)
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                 <div className="flex gap-2">
+                   <Button variant="outline" size="icon" onClick={() => setPrintDialogOpen(true)}>
+                     <Printer className="h-4 w-4" />
+                   </Button>
+                   <DropdownMenu>
+                     <DropdownMenuTrigger asChild>
+                       <Button disabled={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent">
+                         {generating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileDown className="h-4 w-4 mr-2" />}
+                         Exportar
+                         <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+                       </Button>
+                     </DropdownMenuTrigger>
+                     <DropdownMenuContent align="end">
+                       <DropdownMenuItem onClick={() => handlePdf('a4')}>
+                         <FileText className="h-4 w-4 mr-2" /> PDF Formato A4
+                       </DropdownMenuItem>
+                       <DropdownMenuItem onClick={() => handlePdf('thermal')}>
+                         <Printer className="h-4 w-4 mr-2" /> Formato Bobina (57mm)
+                       </DropdownMenuItem>
+                     </DropdownMenuContent>
+                   </DropdownMenu>
+                 </div>
+       {printData && (
+         <ThermalPrintDialog
+           open={printDialogOpen}
+           onOpenChange={setPrintDialogOpen}
+           data={printData}
+         />
+       )}
               </div>
             }
          />
