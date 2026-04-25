@@ -37,7 +37,8 @@ export function useLeituraForm() {
   const [searchParams] = useSearchParams();
 
   const [maquinas, setMaquinas] = useState<MaquinaOpt[]>([]);
-  const maquinaIdParam = searchParams.get("maquina_id") || searchParams.get("maquina");
+   const maquinaIdParam = searchParams.get("maquina_id") || searchParams.get("maquina");
+   const clienteIdParam = searchParams.get("cliente_id") || searchParams.get("cliente");
   const [maquinaId, setMaquinaId] = useState(maquinaIdParam || "");
   const [isScanning, setIsScanning] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
@@ -51,7 +52,7 @@ export function useLeituraForm() {
   const [ultimaLeitura, setUltimaLeitura] = useState<any | null>(null);
   const [variacao, setVariacao] = useState<VariacaoLeitura | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [currentClienteId, setCurrentClienteId] = useState<string | null>(null);
+   const [currentClienteId, setCurrentClienteId] = useState<string | null>(clienteIdParam || null);
   const [leiturasRealizadas, setLeiturasRealizadas] = useState<string[]>([]);
   const [isSubmitNext, setIsSubmitNext] = useState(false);
 
@@ -309,8 +310,8 @@ export function useLeituraForm() {
         } else {
           const ids = JSON.parse(sessionStorage.getItem("session_leituras") || "[]");
           sessionStorage.removeItem("session_leituras");
-          if (ids.length > 1) navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
-          else navigate(`/leituras/${leitura.id}`);
+           if (ids.length > 1) navigate(`/leituras/consolidado?ids=${ids.join(",")}`);
+           else navigate(`/leituras/${leitura.id}?new=true`);
         }
       } else {
         const fotosData = [];
