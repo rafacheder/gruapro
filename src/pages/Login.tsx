@@ -84,9 +84,6 @@ export default function Login() {
              </Button>
           </form>
         </Card>
-        <p className="text-xs text-center text-muted-foreground mt-4">
-          Primeiro acesso master: <span className="text-foreground font-medium">rafatcheder@gmail.com</span>
-        </p>
       </div>
     </div>
   );
