@@ -17,24 +17,14 @@ import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
    Minus, 
    AlertCircle, 
    History, 
-   CheckCircle2,
-   CreditCard,
-   ExternalLink,
-   PlusCircle
- } from "lucide-react";
- import { ThermalPrintDialog } from "@/components/leituras/ThermalPrintDialog";
-   const [printDialogOpen, setPrintDialogOpen] = useState(false);
-   const isNewLeitura = new URLSearchParams(window.location.search).get("new") === "true";
-   const printData = leitura ? {
-     cliente_nome: leitura.clientes?.nome_ponto,
-     data_leitura: leitura.data_leitura,
-     leituras: [{
-       ...leitura,
-       maquina_codigo: leitura.maquinas?.codigo_identificacao,
-     }],
-     isSingle: true
-   } : null;
- 
+    CheckCircle2,
+    CreditCard,
+    ExternalLink,
+    PlusCircle,
+    ChevronDown,
+    FileText
+  } from "lucide-react";
+import { ThermalPrintDialog } from "@/components/leituras/ThermalPrintDialog";
  import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
  import {
    DropdownMenu,
@@ -64,6 +54,18 @@ export default function LeituraDetalhe() {
   const [variacaoResult, setVariacaoResult] = useState<VariacaoLeitura | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
+
+  const isNewLeitura = new URLSearchParams(window.location.search).get("new") === "true";
+  const printData = leitura ? {
+    cliente_nome: leitura.clientes?.nome_ponto,
+    data_leitura: leitura.data_leitura,
+    leituras: [{
+      ...leitura,
+      maquina_codigo: leitura.maquinas?.codigo_identificacao,
+    }],
+    isSingle: true
+  } : null;
 
   useEffect(() => {
     const load = async (retryCount = 0) => {
