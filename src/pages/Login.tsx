@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Cpu } from "lucide-react";
+ import { Loader2 } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -45,9 +45,9 @@ export default function Login() {
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12 bg-gradient-surface">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex h-14 w-14 rounded-2xl bg-gradient-accent items-center justify-center mb-4 shadow-accent">
-            <Cpu className="h-7 w-7 text-accent-foreground" />
-          </div>
+           <div className="inline-flex h-20 w-20 rounded-2xl items-center justify-center mb-4 overflow-hidden shadow-accent">
+             <img src="/logo.png" alt="GruaPro Logo" className="w-full h-full object-contain" />
+           </div>
           <h1 className="text-3xl font-bold">
             Grua<span className="text-accent">Pro</span>
           </h1>
