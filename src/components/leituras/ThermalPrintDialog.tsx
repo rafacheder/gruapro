@@ -30,26 +30,7 @@
  }
  
  export function ThermalPrintDialog({ open, onOpenChange, data }: ThermalPrintDialogProps) {
-   const { user, nome } = useAuth();
-   const [printing, setPrinting] = useState(false);
-   const operador = data.operador_nome || nome || user?.email || "Operador";
- 
-   const handlePrint = async () => {
-     setPrinting(true);
-     try {
-       await logAudit({
-         acao: "PRINT_THERMAL",
-         tabela: "leituras",
-         registro_id: data.isSingle ? data.leituras[0]?.id : null,
-         dados_depois: { ids: data.leituras.map(l => l.id) },
-       });
-       window.print();
-       onOpenChange(false);
-     } finally {
-       setPrinting(false);
-     }
-   };
- 
+
    const ThermalContent = ({ isPreview = false }: { isPreview?: boolean }) => (
      <div className={isPreview ? "" : "print-area"}>
        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '10pt', marginBottom: '2mm' }}>GRUAPRO</div>
