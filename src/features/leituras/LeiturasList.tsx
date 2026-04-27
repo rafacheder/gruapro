@@ -299,11 +299,8 @@ import { calcularVariacao } from "@/utils/reading-calculations";
                 <div className="flex">
                   <Button 
                     onClick={() => {
-                      const firstLeitura = items.find(i => i.id === selectedIds[0]);
-                      const sameCliente = selectedIds.every(id => {
-                        const l = items.find(i => i.id === id);
-                        return l?.cliente_id === firstLeitura?.cliente_id;
-                      });
+                      const firstLeitura = itemsById.get(selectedIds[0]);
+                      const sameCliente = selectedIds.every(id => itemsById.get(id)?.cliente_id === firstLeitura?.cliente_id);
                       if (!sameCliente) {
                         toast.error("Todas as leituras selecionadas devem ser do mesmo cliente.");
                         return;
