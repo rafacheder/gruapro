@@ -100,19 +100,28 @@
      load();
    }, [id]);
  
-   const handleDownloadComprovante = async () => {
-     if (!pagamento?.comprovante_url) return;
-     const { data, error } = await supabase.storage.from("comprovantes-pagamento").download(pagamento.comprovante_url);
-     if (error) {
-       toast.error("Erro ao baixar comprovante");
-       return;
-     }
-     const blobUrl = URL.createObjectURL(data);
-     const a = document.createElement("a");
-     a.href = blobUrl;
-     a.download = `comprovante-${pagamento.comprovante_url}`;
-     a.click();
-   };
+  const handleDownloadComprovante = async () => {
+    if (!pagamento?.comprovante_url) return;
+    
+    try {
+      const { data, error } = await supabase.storage
+        .from("comprovantes-pagamento")
+        .createSignedUrl(pagamento.comprovante_url, 3600);
+        
+      if (error) {
+        console.error("Erro ao gerar URL do comprovante:", error);
+        toast.error("Erro ao acessar comprovante");
+        return;
+      }
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao processar comprovante");
+    }
+  };
  
    if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>;
    if (!pagamento) return <div className="text-center py-12">Pagamento não encontrado</div>;

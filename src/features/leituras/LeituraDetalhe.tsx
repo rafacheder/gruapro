@@ -90,11 +90,26 @@ export default function LeituraDetalhe() {
           
           if (f && f.length > 0) {
             const signedFotos = await Promise.all(f.map(async (foto) => {
-              if (!foto.foto_url.includes("http")) {
-                const { data } = await supabase.storage.from("leitura-fotos").createSignedUrl(foto.foto_url, 3600);
-                return { ...foto, foto_url: data?.signedUrl || foto.foto_url };
+              let filePath = foto.foto_url;
+              // If it's a full URL, extract the path after 'leitura-fotos/'
+              if (filePath.includes("leitura-fotos/")) {
+                filePath = filePath.split("leitura-fotos/").pop() || filePath;
               }
-              return foto;
+              
+              try {
+                const { data, error } = await supabase.storage
+                  .from("leitura-fotos")
+                  .createSignedUrl(filePath, 3600);
+                
+                if (error) {
+                  console.error("Erro ao gerar URL assinada para foto:", filePath, error);
+                  return foto;
+                }
+                return { ...foto, foto_url: data?.signedUrl || foto.foto_url };
+              } catch (e) {
+                console.error("Exceção ao gerar URL assinada:", e);
+                return foto;
+              }
             }));
             setFotos(signedFotos);
           } else {

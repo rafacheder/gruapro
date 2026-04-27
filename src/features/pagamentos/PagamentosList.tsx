@@ -48,13 +48,22 @@ interface Pagamento {
   });
 
   const handleDownloadComprovante = async (url: string) => {
-    const { data, error } = await supabase.storage.from("comprovantes-pagamento").download(url);
-    if (error) return;
-    const blobUrl = URL.createObjectURL(data);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = `comprovante-${url}`;
-    a.click();
+    try {
+      const { data, error } = await supabase.storage
+        .from("comprovantes-pagamento")
+        .createSignedUrl(url, 3600);
+        
+      if (error) {
+        console.error("Erro ao gerar URL do comprovante:", error);
+        return;
+      }
+      
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
