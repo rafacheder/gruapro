@@ -79,15 +79,11 @@ export async function syncPendingLeituras() {
           throw new Error(`Erro ao enviar foto ${i + 1}: ${upErr.message}`);
         }
 
-        const { data: pub } = supabase.storage
-          .from('leitura-fotos')
-          .getPublicUrl(path);
-
-        const { error: dbErr } = await supabase.from('leitura_fotos').insert({
-          leitura_id: inserted.id,
-          foto_url: pub.publicUrl,
-          ordem: i + 1,
-        });
+         const { error: dbErr } = await supabase.from('leitura_fotos').insert({
+           leitura_id: inserted.id,
+           foto_url: path,
+           ordem: i + 1,
+         });
 
         if (dbErr) throw dbErr;
       });
