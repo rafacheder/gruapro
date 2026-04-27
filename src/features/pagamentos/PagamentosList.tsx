@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, CreditCard, Calendar, FileDown } from "lucide-react";
+ import { Plus, Search, CreditCard, Calendar, FileDown, Loader2 } from "lucide-react";
  import { usePagamentos } from "@/hooks/usePagamentos";
  import { useClientes } from "@/hooks/useClientes";
 import { formatBRL, formatDateTime } from "@/lib/format";
@@ -145,7 +145,7 @@ interface Pagamento {
       <RegisterPaymentDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSuccess={loadData}
+         onSuccess={() => {}}
       />
     </div>
   );
