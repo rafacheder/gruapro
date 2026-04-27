@@ -32,6 +32,9 @@ export function useDashboardStats(role: string | undefined) {
     return getPeriodDates(periodType, range, referenceDate ?? new Date());
   }, [periodType, customRange, referenceDate]);
 
+  // Stable primitive key to avoid effect re-firing from object identity
+  const periodKey = `${periodDates.start.getTime()}_${periodDates.end.getTime()}`;
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -102,7 +105,8 @@ export function useDashboardStats(role: string | undefined) {
       setLoading(false);
     };
     load();
-  }, [periodDates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [periodKey]);
 
   useEffect(() => {
     if (role === 'usuario') return;
