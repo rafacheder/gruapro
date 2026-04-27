@@ -536,8 +536,8 @@ interface LeituraPdf {
  async function fetchAsDataURL(url: string): Promise<string> {
    let finalUrl = url;
    if (!url.includes("http")) {
-     const { data } = await supabase.storage.from("leitura-fotos").createSignedUrl(url, 3600);
-     if (data?.signedUrl) finalUrl = data.signedUrl;
+     const { data } = supabase.storage.from("leitura-fotos").getPublicUrl(url);
+     finalUrl = data.publicUrl;
    }
    const res = await fetch(finalUrl);
    const blob = await res.blob();
