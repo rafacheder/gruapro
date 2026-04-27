@@ -1,4 +1,4 @@
- import { useEffect, useState, useMemo, useCallback } from "react";
+  import { useEffect, useState, useMemo, useCallback, memo } from "react";
  import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -22,6 +22,90 @@ import { calcularVariacao } from "@/utils/reading-calculations";
  import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
  import RegisterPaymentDialog from "../pagamentos/RegisterPaymentDialog";
  
+ interface LeituraRowProps {
+   leitura: any;
+   checked: boolean;
+   showPayButton: boolean;
+   showFinancials: boolean;
+   onToggle: (id: string, checked: boolean) => void;
+   onPay: (id: string, clienteId: string) => void;
+ }
+ 
+ const LeituraRow = memo(function LeituraRow({ leitura: l, checked, showPayButton, showFinancials, onToggle, onPay }: LeituraRowProps) {
+   return (
+     <div className="relative flex items-center gap-2">
+       <input
+         type="checkbox"
+         checked={checked}
+         onChange={(e) => onToggle(l.id, e.target.checked)}
+         className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent ml-2"
+       />
+       <Link to={`/leituras/${l.id}`} className="flex-1 min-w-0">
+         <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3 relative overflow-hidden">
+           <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+             l.status === 'pago' ? 'bg-success' :
+             l.status === 'pendente' ? 'bg-warning' :
+             'bg-muted'
+           }`} />
+           <div className="min-w-0 flex-1 pl-1">
+             <div className="text-sm font-semibold truncate">{l.cliente_nome || l.clientes?.nome_ponto}</div>
+             <div className="text-xs text-muted-foreground truncate">
+               {l.maquina_codigo || l.maquinas?.codigo_identificacao} • {formatDateTime(l.data_leitura)}
+             </div>
+             <div className="flex items-center gap-3 mt-1">
+               <div className="text-xs text-muted-foreground">
+                 {formatBRL(l.valor_faturado)} • {l.pelucias_saidas} pelúcia(s)
+               </div>
+               {l.variacao && (
+                 <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
+                   l.variacao.nivelAlerta === 'critico' ? 'text-destructive' :
+                   l.variacao.nivelAlerta === 'atencao' ? 'text-warning' :
+                   l.variacao.variacaoDiaria > 5 ? 'text-success' : 'text-muted-foreground'
+                 }`}>
+                   {l.variacao.variacaoDiaria > 5 ? <TrendingUp className="h-3 w-3" /> :
+                    l.variacao.variacaoDiaria < -5 ? (l.variacao.nivelAlerta === 'critico' ? <AlertTriangle className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />) :
+                    <Minus className="h-3 w-3" />}
+                   <span className="hidden sm:inline">{formatPercent(l.variacao.variacaoDiaria)}</span>
+                 </div>
+               )}
+             </div>
+           </div>
+           <div className="text-right shrink-0 flex flex-col items-end gap-1">
+             {showFinancials && (
+               <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
+             )}
+             <Badge
+               variant={l.status === "pago" ? "default" : "secondary"}
+               className={`mt-1 text-[10px] capitalize ${
+                 l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' :
+                 l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' :
+                 ''
+               }`}
+             >
+               {l.status}
+             </Badge>
+             {l.status === 'pendente' && showPayButton && (
+               <Button
+                 size="sm"
+                 variant="ghost"
+                 className="h-7 px-2 text-success hover:text-success hover:bg-success/10 text-[10px]"
+                 onClick={(e) => {
+                   e.preventDefault();
+                   e.stopPropagation();
+                   onPay(l.id, l.cliente_id);
+                 }}
+               >
+                 <CheckCircle2 className="h-3 w-3 mr-1" />
+                 Pagar
+               </Button>
+             )}
+           </div>
+         </Card>
+       </Link>
+     </div>
+   );
+ });
+ 
  export default function LeiturasList() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -34,19 +118,30 @@ import { calcularVariacao } from "@/utils/reading-calculations";
    const [items, setItems] = useState<any[]>([]);
    const isAdmin = role === 'admin' || role === 'master';
  
-   const selectedItems = useMemo(() => {
-     return items.filter(i => selectedIds.includes(i.id));
-   }, [selectedIds, items]);
+    const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+    const itemsById = useMemo(() => {
+      const m = new Map<string, any>();
+      for (const i of items) m.set(i.id, i);
+      return m;
+    }, [items]);
+    const selectedItems = useMemo(() => {
+      const out: any[] = [];
+      for (const id of selectedIds) {
+        const it = itemsById.get(id);
+        if (it) out.push(it);
+      }
+      return out;
+    }, [selectedIds, itemsById]);
  
    const totalComissao = useMemo(() => {
      return selectedItems.reduce((acc, curr) => acc + Number(curr.valor_comissao), 0);
    }, [selectedItems]);
  
-   const validation = useMemo(() => {
+    const validation = useMemo(() => {
      if (selectedIds.length === 0) return { valid: false, error: null };
      
      const firstClienteId = selectedItems[0]?.cliente_id;
-     const sameCliente = selectedItems.every(i => i.cliente_id === firstClienteId);
+      const sameCliente = selectedItems.every(i => i.cliente_id === firstClienteId);
      if (!sameCliente) return { valid: false, error: "Selecione leituras de um único cliente para registrar pagamento" };
      
      const allPending = selectedItems.every(i => i.status === 'pendente');
@@ -54,6 +149,13 @@ import { calcularVariacao } from "@/utils/reading-calculations";
      
      return { valid: true, error: null, clienteId: firstClienteId };
    }, [selectedItems, selectedIds]);
+    const toggleSelect = useCallback((id: string, checked: boolean) => {
+      setSelectedIds(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
+    }, []);
+    const handlePayItem = useCallback((id: string, clienteId: string) => {
+      setBatchSelection({ ids: [id], clienteId });
+      setPaymentDialogOpen(true);
+    }, []);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -197,11 +299,8 @@ import { calcularVariacao } from "@/utils/reading-calculations";
                 <div className="flex">
                   <Button 
                     onClick={() => {
-                      const firstLeitura = items.find(i => i.id === selectedIds[0]);
-                      const sameCliente = selectedIds.every(id => {
-                        const l = items.find(i => i.id === id);
-                        return l?.cliente_id === firstLeitura?.cliente_id;
-                      });
+                      const firstLeitura = itemsById.get(selectedIds[0]);
+                      const sameCliente = selectedIds.every(id => itemsById.get(id)?.cliente_id === firstLeitura?.cliente_id);
                       if (!sameCliente) {
                         toast.error("Todas as leituras selecionadas devem ser do mesmo cliente.");
                         return;
@@ -269,80 +368,15 @@ import { calcularVariacao } from "@/utils/reading-calculations";
          <div className="space-y-4">
            <div className="space-y-2">
             {items.map((l) => (
-             <div key={l.id} className="relative flex items-center gap-2">
-                <input 
-                  type="checkbox" 
-                  checked={selectedIds.includes(l.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedIds([...selectedIds, l.id]);
-                    else setSelectedIds(selectedIds.filter(id => id !== l.id));
-                  }}
-                  className="h-4 w-4 rounded border-gray-300 text-accent focus:ring-accent ml-2"
-                />
-               <Link to={`/leituras/${l.id}`} className="flex-1 min-w-0">
-                 <Card className="p-4 hover:border-accent transition-colors bg-card flex items-center justify-between gap-3 relative overflow-hidden">
-                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                  l.status === 'pago' ? 'bg-success' : 
-                  l.status === 'pendente' ? 'bg-warning' : 
-                  'bg-muted'
-                }`} />
-                <div className="min-w-0 flex-1 pl-1">
-                  <div className="text-sm font-semibold truncate">{l.cliente_nome || l.clientes?.nome_ponto}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {l.maquina_codigo || l.maquinas?.codigo_identificacao} • {formatDateTime(l.data_leitura)}
-                  </div>
-                  <div className="flex items-center gap-3 mt-1">
-                    <div className="text-xs text-muted-foreground">
-                      {formatBRL(l.valor_faturado)} • {l.pelucias_saidas} pelúcia(s)
-                    </div>
-                    {l.variacao && (
-                      <div className={`flex items-center gap-0.5 text-[10px] font-bold ${
-                        l.variacao.nivelAlerta === 'critico' ? 'text-destructive' : 
-                        l.variacao.nivelAlerta === 'atencao' ? 'text-warning' : 
-                        l.variacao.variacaoDiaria > 5 ? 'text-success' : 'text-muted-foreground'
-                      }`}>
-                        {l.variacao.variacaoDiaria > 5 ? <TrendingUp className="h-3 w-3" /> : 
-                         l.variacao.variacaoDiaria < -5 ? (l.variacao.nivelAlerta === 'critico' ? <AlertTriangle className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />) : 
-                         <Minus className="h-3 w-3" />}
-                        <span className="hidden sm:inline">{formatPercent(l.variacao.variacaoDiaria)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                 <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                   {showFinancials && (
-                     <div className="text-sm font-bold text-accent">{formatBRL(l.valor_comissao)}</div>
-                   )}
-                   <Badge 
-                     variant={l.status === "pago" ? "default" : "secondary"} 
-                     className={`mt-1 text-[10px] capitalize ${
-                       l.status === 'pago' ? 'bg-success/20 text-success hover:bg-success/30 border-success/30' : 
-                       l.status === 'pendente' ? 'bg-warning/20 text-warning hover:bg-warning/30 border-warning/30' : 
-                       ''
-                     }`}
-                   >
-                     {l.status}
-                   </Badge>
-                    {l.status === 'pendente' && selectedIds.length === 0 && (
-                     <Button
-                       size="sm"
-                       variant="ghost"
-                       className="h-7 px-2 text-success hover:text-success hover:bg-success/10 text-[10px]"
-                       onClick={(e) => {
-                         e.preventDefault();
-                         e.stopPropagation();
-                         setBatchSelection({ ids: [l.id], clienteId: l.cliente_id });
-                         setPaymentDialogOpen(true);
-                       }}
-                     >
-                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                       Pagar
-                     </Button>
-                   )}
-                 </div>
-               </Card>
-               </Link>
-             </div>
+              <LeituraRow
+                key={l.id}
+                leitura={l}
+                checked={selectedSet.has(l.id)}
+                showPayButton={selectedIds.length === 0}
+                showFinancials={showFinancials}
+                onToggle={toggleSelect}
+                onPay={handlePayItem}
+              />
             ))}
           </div>
 

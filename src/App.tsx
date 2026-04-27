@@ -29,7 +29,16 @@ import PagamentosList from "@/features/pagamentos/PagamentosList";
  import ReconciliacaoView from "@/features/pagamentos/ReconciliacaoView";
 import ExtratosView from "@/features/extratos/ExtratosView";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>

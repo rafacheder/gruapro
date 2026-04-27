@@ -1,5 +1,6 @@
-import { differenceInDays, parseISO } from 'date-fns';
 import { ALERT_THRESHOLDS } from '@/config/alertas';
+
+const MS_DAY = 86_400_000;
 
 export interface VariacaoLeitura {
   variacaoFaturamento: number; // % variação no valor_faturado
@@ -22,18 +23,18 @@ export function calcularVariacao(
 ): VariacaoLeitura | null {
   if (!leituraAnterior) return null;
 
-  const dataAtual = parseISO(leituraAtual.data_leitura);
-  const dataAnterior = parseISO(leituraAnterior.data_leitura);
-  
-  // Dias entre a leitura atual e a anterior
-  const diasEntreLeituras = Math.max(1, differenceInDays(dataAtual, dataAnterior));
+  const tAtual = new Date(leituraAtual.data_leitura).getTime();
+  const tAnterior = new Date(leituraAnterior.data_leitura).getTime();
+
+  // Dias entre a leitura atual e a anterior (mínimo 1)
+  const diasEntreLeituras = Math.max(1, Math.floor((tAtual - tAnterior) / MS_DAY));
   const faturamentoPorDia = leituraAtual.valor_faturado / diasEntreLeituras;
 
   // Cálculo do faturamento diário da leitura anterior (precisa do predecessor dela)
   let faturamentoDiaAnterior = 0;
   if (leituraAnterior.data_leitura_previa) {
-    const dataPrevia = parseISO(leituraAnterior.data_leitura_previa);
-    const diasAnterior = Math.max(1, differenceInDays(dataAnterior, dataPrevia));
+    const tPrevia = new Date(leituraAnterior.data_leitura_previa).getTime();
+    const diasAnterior = Math.max(1, Math.floor((tAnterior - tPrevia) / MS_DAY));
     faturamentoDiaAnterior = leituraAnterior.valor_faturado / diasAnterior;
   } else {
     // Se não temos a leitura antes da anterior, usamos o mesmo intervalo como fallback
