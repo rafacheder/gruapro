@@ -531,9 +531,16 @@ interface LeituraPdf {
     return { docId, hash };
  }
 
-async function fetchAsDataURL(url: string): Promise<string> {
-  const res = await fetch(url);
-  const blob = await res.blob();
+ import { supabase } from "@/integrations/supabase/client";
+ 
+ async function fetchAsDataURL(url: string): Promise<string> {
+   let finalUrl = url;
+   if (!url.includes("http")) {
+     const { data } = await supabase.storage.from("leitura-fotos").createSignedUrl(url, 3600);
+     if (data?.signedUrl) finalUrl = data.signedUrl;
+   }
+   const res = await fetch(finalUrl);
+   const blob = await res.blob();
   return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onloadend = () => resolve(r.result as string);
