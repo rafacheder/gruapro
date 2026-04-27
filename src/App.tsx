@@ -1,4 +1,3 @@
-             <Route path="/perfil" element={<Shell><Profile /></Shell>} />
  import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
  import RelatorioConsolidado from "@/features/leituras/RelatorioConsolidado";
  import Profile from "./pages/Profile.tsx";
@@ -79,11 +78,12 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
                 <AppShell><ExtratosView /></AppShell>
               </ProtectedRoute>
             } />
-            <Route path="/audit" element={
-              <ProtectedRoute requireRoles={["master"]}>
-                <AppShell><AuditLog /></AppShell>
-              </ProtectedRoute>
-            } />
+             <Route path="/audit" element={
+               <ProtectedRoute requireRoles={["master"]}>
+                 <AppShell><AuditLog /></AppShell>
+               </ProtectedRoute>
+             } />
+             <Route path="/perfil" element={<Shell><Profile /></Shell>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
