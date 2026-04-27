@@ -287,8 +287,7 @@ export function useLeituraForm() {
           const path = `${leitura.id}/${i + 1}-${Date.now()}.jpg`;
           const { error: upErr } = await supabase.storage.from("leitura-fotos").upload(path, blob, { contentType: "image/jpeg" });
           if (upErr) { console.error(upErr); continue; }
-          const { data: pub } = supabase.storage.from("leitura-fotos").getPublicUrl(path);
-          await supabase.from("leitura_fotos").insert({ leitura_id: leitura.id, foto_url: pub.publicUrl, ordem: i + 1 });
+           await supabase.from("leitura_fotos").insert({ leitura_id: leitura.id, foto_url: path, ordem: i + 1 });
         }
 
         await logAudit({
