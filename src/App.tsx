@@ -1,3 +1,4 @@
+             <Route path="/perfil" element={<Shell><Profile /></Shell>} />
  import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
  import RelatorioConsolidado from "@/features/leituras/RelatorioConsolidado";
  import Profile from "./pages/Profile.tsx";
