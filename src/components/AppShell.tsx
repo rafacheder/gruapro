@@ -20,6 +20,7 @@ const navItems = [
   { to: "/usuarios", label: "Usuários", icon: Shield, roles: ["master", "admin"] as const },
    { to: "/audit", label: "Audit log", icon: ScrollText, roles: ["master"] as const },
    { to: "/reconciliar", label: "Reconciliação", icon: ClipboardList, roles: ["master"] as const },
+   { to: "/perfil", label: "Meu Perfil", icon: Users, roles: ["master", "admin", "usuario"] as const },
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {
