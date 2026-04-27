@@ -3,7 +3,7 @@
  import { Database } from "@/integrations/supabase/types";
  
  export type Maquina = Database["public"]["Tables"]["maquinas"]["Row"] & {
-   clientes: { nome_ponto: string; cidade: string } | null;
+   clientes: { id: string; nome_ponto: string; cidade: string } | null;
  };
  export type NewMaquina = Database["public"]["Tables"]["maquinas"]["Insert"];
  export type UpdateMaquina = Database["public"]["Tables"]["maquinas"]["Update"];
@@ -18,7 +18,7 @@
      queryFn: async () => {
        let q = supabase
          .from("maquinas")
-         .select("*, clientes(nome_ponto, cidade)");
+         .select("*, clientes(id, nome_ponto, cidade)");
        
        if (search) {
          q = q.or(`codigo_identificacao.ilike.%${search}%,modelo.ilike.%${search}%`);
