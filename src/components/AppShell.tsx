@@ -1,4 +1,4 @@
- import { ReactNode, useMemo, useCallback } from "react";
+ import { ReactNode, useMemo, useCallback, memo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,36 @@ const navItems = [
    { to: "/perfil", label: "Meu Perfil", icon: Users, roles: ["master", "admin", "usuario"] as const },
 ];
 
+interface NavListProps {
+  items: typeof navItems;
+  currentPath: string;
+  onClick?: () => void;
+}
+
+const NavList = memo(({ items, currentPath, onClick }: NavListProps) => (
+  <nav className="flex flex-col gap-1">
+    {items.map((item) => {
+      const active = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
+      const Icon = item.icon;
+      return (
+        <Link
+          key={item.to}
+          to={item.to}
+          onClick={onClick}
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+            active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+          )}
+        >
+          <Icon className="h-4 w-4" />
+          {item.label}
+        </Link>
+      );
+    })}
+  </nav>
+));
+NavList.displayName = "NavList";
+
 export default function AppShell({ children }: { children: ReactNode }) {
   const { role, nome, signOut } = useAuth();
   const location = useLocation();
@@ -33,35 +63,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
      navItems.filter((i) => role && (i.roles as readonly string[]).includes(role)),
      [role]
    );
- 
- interface NavListProps {
-   items: typeof navItems;
-   currentPath: string;
-   onClick?: () => void;
- }
- 
- const NavList = ({ items, currentPath, onClick }: NavListProps) => (
-   <nav className="flex flex-col gap-1">
-     {items.map((item) => {
-       const active = currentPath === item.to || (item.to !== "/" && currentPath.startsWith(item.to));
-       const Icon = item.icon;
-       return (
-         <Link
-           key={item.to}
-           to={item.to}
-           onClick={onClick}
-           className={cn(
-             "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-             active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-           )}
-         >
-           <Icon className="h-4 w-4" />
-           {item.label}
-         </Link>
-       );
-     })}
-   </nav>
- );
+  const closeSheet = useCallback(() => setOpen(false), []);
 
    const handleLogout = async () => {
      const pending = await db.pendingLeituras.count();
@@ -118,7 +120,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 <div className="text-xs text-muted-foreground">{nome}</div>
               </div>
                <div className="px-3 py-4">
-                 <NavList items={visible} currentPath={location.pathname} onClick={() => setOpen(false)} />
+                 <NavList items={visible} currentPath={location.pathname} onClick={closeSheet} />
                </div>
               <div className="border-t border-border p-3">
                 <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
