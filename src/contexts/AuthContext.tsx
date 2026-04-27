@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode, useMemo, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,15 +22,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [nome, setNome] = useState("");
   const [loading, setLoading] = useState(true);
+  // Dedupe role/profile load per uid to prevent duplicate requests
+  // (StrictMode double-mount + onAuthStateChange + getSession all firing).
+  const loadedUidRef = useRef<string | null>(null);
+  const inflightRef = useRef<Promise<void> | null>(null);
 
-  const loadRoleAndProfile = async (uid: string) => {
-    const [{ data: roleData }, { data: profileData }] = await Promise.all([
-      supabase.rpc("get_user_role", { _user_id: uid }),
-      supabase.from("profiles").select("nome_completo").eq("id", uid).maybeSingle(),
-    ]);
-    setRole((roleData as AppRole | null) ?? null);
-    setNome(profileData?.nome_completo || "");
-  };
+  const loadRoleAndProfile = useCallback(async (uid: string, force = false) => {
+    if (!force && loadedUidRef.current === uid) return;
+    if (inflightRef.current) return inflightRef.current;
+    const p = (async () => {
+      const [{ data: roleData }, { data: profileData }] = await Promise.all([
+        supabase.rpc("get_user_role", { _user_id: uid }),
+        supabase.from("profiles").select("nome_completo").eq("id", uid).maybeSingle(),
+      ]);
+      setRole((roleData as AppRole | null) ?? null);
+      setNome(profileData?.nome_completo || "");
+      loadedUidRef.current = uid;
+    })();
+    inflightRef.current = p;
+    try { await p; } finally { inflightRef.current = null; }
+  }, []);
 
   useEffect(() => {
     // Listener primeiro
@@ -38,9 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // defer ao próximo tick para evitar deadlock
+        // defer ao próximo tick para evitar deadlock; dedupe interno evita duplicatas
         setTimeout(() => loadRoleAndProfile(sess.user.id), 0);
       } else {
+        loadedUidRef.current = null;
         setRole(null);
         setNome("");
       }
@@ -54,18 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [loadRoleAndProfile]);
 
   const signOut = async () => {
+    loadedUidRef.current = null;
     await supabase.auth.signOut();
   };
 
-  const refreshRole = async () => {
-    if (user) await loadRoleAndProfile(user.id);
-  };
+  const refreshRole = useCallback(async () => {
+    if (user) await loadRoleAndProfile(user.id, true);
+  }, [user, loadRoleAndProfile]);
+
+  const value = useMemo(
+    () => ({ user, session, role, nome, loading, signOut, refreshRole }),
+    [user, session, role, nome, loading, refreshRole]
+  );
 
   return (
-    <AuthContext.Provider value={{ user, session, role, nome, loading, signOut, refreshRole }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
