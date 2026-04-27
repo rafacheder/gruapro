@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, ChevronRight } from "lucide-react";
@@ -9,7 +10,7 @@ interface AlertsListProps {
   loadingAlerts: boolean;
 }
 
-export function AlertsList({ alertas, loadingAlerts }: AlertsListProps) {
+function AlertsListImpl({ alertas, loadingAlerts }: AlertsListProps) {
   const navigate = useNavigate();
 
   return (
@@ -64,3 +65,5 @@ export function AlertsList({ alertas, loadingAlerts }: AlertsListProps) {
     </Card>
   );
 }
+
+export const AlertsList = memo(AlertsListImpl);
