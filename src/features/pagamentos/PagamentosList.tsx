@@ -1,4 +1,4 @@
- import { useEffect, useState } from "react";
+ import { useState } from "react";
  import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, CreditCard, Calendar, FileDown } from "lucide-react";
-import { Loader2 } from "lucide-react";
+ import { Plus, Search, CreditCard, Calendar, FileDown, Loader2 } from "lucide-react";
+ import { usePagamentos } from "@/hooks/usePagamentos";
+ import { useClientes } from "@/hooks/useClientes";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import RegisterPaymentDialog from "./RegisterPaymentDialog";
 import {
@@ -30,58 +31,14 @@ interface Pagamento {
   clientes: { nome_ponto: string };
 }
 
-export default function PagamentosList() {
-  const { role } = useAuth();
-  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterCliente, setFilterCliente] = useState<string>("all");
-  const [filterForma, setFilterForma] = useState<string>("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [clientes, setClientes] = useState<{ id: string; nome_ponto: string }[]>([]);
-
-   useEffect(() => {
-     loadData();
-     loadClientes();
+ export default function PagamentosList() {
+   const [search, setSearch] = useState("");
+   const [filterCliente, setFilterCliente] = useState<string>("all");
+   const [filterForma, setFilterForma] = useState<string>("all");
+   const [dialogOpen, setDialogOpen] = useState(false);
  
-     // Realtime subscription to reflect changes immediately
-     const channel = supabase
-       .channel("pagamentos_changes")
-       .on(
-         "postgres_changes",
-         { event: "*", schema: "public", table: "pagamentos" },
-         () => {
-           loadData(true);
-         }
-       )
-       .subscribe();
- 
-     return () => {
-       supabase.removeChannel(channel);
-     };
-   }, []);
-
-  async function loadClientes() {
-    const { data } = await supabase.from("clientes").select("id, nome_ponto").order("nome_ponto");
-    setClientes(data || []);
-  }
-
-   async function loadData(isSilent = false) {
-     if (!isSilent) setLoading(true);
-     try {
-       const { data, error } = await supabase
-         .from("pagamentos")
-         .select("*, clientes(nome_ponto)")
-         .order("data_pagamento", { ascending: false });
-       
-       if (error) throw error;
-       setPagamentos((data as any) || []);
-     } catch (err) {
-       console.error("Erro ao carregar pagamentos:", err);
-     } finally {
-       setLoading(false);
-     }
-   }
+   const { pagamentos, loading } = usePagamentos(filterCliente !== "all" ? filterCliente : undefined);
+   const { clientes } = useClientes();
 
   const filtered = pagamentos.filter((p) => {
     const matchCliente = filterCliente === "all" || (p as any).cliente_id === filterCliente;
@@ -188,7 +145,7 @@ export default function PagamentosList() {
       <RegisterPaymentDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        onSuccess={loadData}
+         onSuccess={() => {}}
       />
     </div>
   );

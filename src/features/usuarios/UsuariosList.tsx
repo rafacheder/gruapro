@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+ import { useState } from "react";
+ import { useUsuarios } from "@/hooks/useUsuarios";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,62 +15,33 @@ import { logAudit } from "@/lib/audit";
 
 interface Row { id: string; nome_completo: string; email: string | null; ativo: boolean; role: AppRole | null; }
 
-export default function UsuariosList() {
-  const { role: myRole, user } = useAuth();
-  const [rows, setRows] = useState<Row[]>([]);
-   const [loading, setLoading] = useState(true);
-   const [creating, setCreating] = useState(false);
+ export default function UsuariosList() {
+   const { role: myRole, user } = useAuth();
+   const { usuarios, loading, createUser: createUserHook, changeRole: changeRoleHook, isCreating } = useUsuarios();
    const [open, setOpen] = useState(false);
    const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
    const createUser = async (e: React.FormEvent) => {
      e.preventDefault();
-     setCreating(true);
      try {
-       const { data, error } = await supabase.functions.invoke("manage-users", {
-         body: { action: "create", ...formData },
-       });
-       if (error) throw error;
+       await createUserHook(formData);
        toast.success("Usuário criado com sucesso");
        setOpen(false);
        setFormData({ username: "", password: "", nome_completo: "" });
-       load();
      } catch (err: any) {
        toast.error(err.message || "Erro ao criar usuário");
-     } finally {
-       setCreating(false);
      }
    };
- 
 
-  const load = async () => {
-    setLoading(true);
-    const { data: profiles } = await supabase.from("profiles").select("id, nome_completo, email, ativo").order("nome_completo");
-    const { data: roles } = await supabase.from("user_roles").select("user_id, role");
-    const map = new Map<string, AppRole>();
-    (roles || []).forEach((r) => {
-      const cur = map.get(r.user_id);
-      const rank = (x: AppRole) => x === "master" ? 1 : x === "admin" ? 2 : 3;
-      if (!cur || rank(r.role as AppRole) < rank(cur)) map.set(r.user_id, r.role as AppRole);
-    });
-    setRows((profiles || []).map((p) => ({ ...p, role: map.get(p.id) ?? null })));
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const changeRole = async (uid: string, newRole: AppRole) => {
-    if (uid === user?.id) { toast.error("Você não pode alterar seu próprio papel"); return; }
-    try {
-      await supabase.from("user_roles").delete().eq("user_id", uid);
-      const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: newRole });
-      if (error) throw error;
-      await logAudit({ acao: "CHANGE_ROLE", tabela: "user_roles", registro_id: uid, dados_depois: { role: newRole } });
-      toast.success("Papel atualizado");
-      load();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro");
-    }
-  };
+   const changeRole = async (uid: string, newRole: AppRole) => {
+     if (uid === user?.id) { toast.error("Você não pode alterar seu próprio papel"); return; }
+     try {
+       await changeRoleHook({ uid, newRole });
+       await logAudit({ acao: "CHANGE_ROLE", tabela: "user_roles", registro_id: uid, dados_depois: { role: newRole } });
+       toast.success("Papel atualizado");
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro");
+     }
+   };
 
   return (
      <div className="space-y-6">
@@ -118,8 +89,8 @@ export default function UsuariosList() {
                    minLength={6}
                  />
                </div>
-               <Button type="submit" className="w-full bg-accent" disabled={creating}>
-                 {creating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                <Button type="submit" className="w-full bg-accent" disabled={isCreating}>
+                  {isCreating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                  Criar Usuário
                </Button>
              </form>
@@ -130,7 +101,7 @@ export default function UsuariosList() {
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>
       ) : (
         <div className="space-y-2">
-          {rows.map((r) => (
+           {usuarios.map((r) => (
             <Card key={r.id} className="p-4 bg-card flex items-center gap-4 flex-wrap">
               <div className="flex-1 min-w-0">
                 <div className="font-semibold truncate">{r.nome_completo || "—"}</div>

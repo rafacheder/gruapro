@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+ import { useClientes } from "./hooks/useClientes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,40 +60,37 @@ export default function ClienteForm() {
   const { role } = useAuth();
   const isEdit = !!id;
   const [form, setForm] = useState<FormData>(empty);
-  const [loading, setLoading] = useState(isEdit);
-  const [saving, setSaving] = useState(false);
+   const { clientes, loading: loadingList, createCliente, updateCliente, isCreating, isUpdating } = useClientes();
+   const [loading, setLoading] = useState(isEdit);
   const [cepLoading, setCepLoading] = useState(false);
 
-  useEffect(() => {
-    if (!isEdit) return;
-    const load = async () => {
-      const { data, error } = await supabase.from("clientes").select("*").eq("id", id).maybeSingle();
-      if (error || !data) {
-        toast.error("Cliente não encontrado");
-        navigate("/clientes");
-        return;
-      }
-      setForm({
-        nome_ponto: data.nome_ponto,
-        nome_responsavel: data.nome_responsavel,
-        telefone_responsavel: maskPhone(data.telefone_responsavel),
-        email: data.email || "",
-        cep: maskCEP(data.cep),
-        rua: data.rua,
-        numero: data.numero,
-        complemento: data.complemento || "",
-        bairro: data.bairro,
-        cidade: data.cidade,
-        estado: data.estado,
-        percentual_comissao: Number(data.percentual_comissao),
-        data_inicio_contrato: data.data_inicio_contrato || "",
-        observacoes: data.observacoes || "",
-        ativo: data.ativo,
-      });
-      setLoading(false);
-    };
-    load();
-  }, [id, isEdit, navigate]);
+   useEffect(() => {
+     if (!isEdit || loadingList) return;
+     const data = clientes.find(c => c.id === id);
+     if (!data) {
+       toast.error("Cliente não encontrado");
+       navigate("/clientes");
+       return;
+     }
+     setForm({
+       nome_ponto: data.nome_ponto,
+       nome_responsavel: data.nome_responsavel,
+       telefone_responsavel: maskPhone(data.telefone_responsavel),
+       email: data.email || "",
+       cep: maskCEP(data.cep),
+       rua: data.rua,
+       numero: data.numero,
+       complemento: data.complemento || "",
+       bairro: data.bairro,
+       cidade: data.cidade,
+       estado: data.estado,
+       percentual_comissao: Number(data.percentual_comissao),
+       data_inicio_contrato: data.data_inicio_contrato || "",
+       observacoes: data.observacoes || "",
+       ativo: data.ativo,
+     });
+     setLoading(false);
+   }, [id, isEdit, navigate, clientes, loadingList]);
 
   const handleCEP = async (value: string) => {
     const masked = maskCEP(value);
@@ -131,37 +128,27 @@ export default function ClienteForm() {
       toast.error(parsed.error.issues[0]?.message || "Dados inválidos");
       return;
     }
-    setSaving(true);
-    try {
-      const dbPayload = {
-        ...parsed.data,
-        email: parsed.data.email || null,
-        complemento: parsed.data.complemento || null,
-        observacoes: parsed.data.observacoes || null,
-        data_inicio_contrato: parsed.data.data_inicio_contrato || null,
-      };
-      if (isEdit) {
-        const { error } = await supabase.from("clientes").update(dbPayload).eq("id", id);
-        if (error) throw error;
-        await logAudit({ acao: "UPDATE_CLIENTE", tabela: "clientes", registro_id: id, dados_depois: dbPayload });
-        toast.success("Cliente atualizado");
-      } else {
-        const { data: { user } } = await supabase.auth.getUser();
-        const { data, error } = await supabase
-          .from("clientes")
-          .insert({ ...dbPayload, created_by: user?.id })
-          .select("id")
-          .single();
-        if (error) throw error;
-        await logAudit({ acao: "CREATE_CLIENTE", tabela: "clientes", registro_id: data.id, dados_depois: dbPayload });
-        toast.success("Cliente cadastrado");
-      }
-      navigate("/clientes");
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
+     try {
+       const dbPayload = {
+         ...parsed.data,
+         email: parsed.data.email || null,
+         complemento: parsed.data.complemento || null,
+         observacoes: parsed.data.observacoes || null,
+         data_inicio_contrato: parsed.data.data_inicio_contrato || null,
+       };
+       if (isEdit) {
+         await updateCliente({ id, ...dbPayload });
+         await logAudit({ acao: "UPDATE_CLIENTE", tabela: "clientes", registro_id: id, dados_depois: dbPayload });
+         toast.success("Cliente atualizado");
+       } else {
+         const data = await createCliente(dbPayload);
+         await logAudit({ acao: "CREATE_CLIENTE", tabela: "clientes", registro_id: data.id, dados_depois: dbPayload });
+         toast.success("Cliente cadastrado");
+       }
+       navigate("/clientes");
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+     }
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
@@ -274,8 +261,8 @@ export default function ClienteForm() {
           <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="flex-1">
             Cancelar
           </Button>
-          <Button type="submit" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+           <Button type="submit" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={isCreating || isUpdating}>
+             {(isCreating || isUpdating) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar
           </Button>
         </div>

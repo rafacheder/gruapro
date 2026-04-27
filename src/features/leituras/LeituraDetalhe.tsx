@@ -47,7 +47,6 @@ export default function LeituraDetalhe() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leitura, setLeitura] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
    const [fotos, setFotos] = useState<any[]>([]);
    const [pagamentoInfo, setPagamentoInfo] = useState<any>(null);
    const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -87,7 +86,20 @@ export default function LeituraDetalhe() {
           return;
         }
 
-         const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
+          const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
+          
+          if (f && f.length > 0) {
+            const signedFotos = await Promise.all(f.map(async (foto) => {
+              if (!foto.foto_url.includes("http")) {
+                const { data } = await supabase.storage.from("leitura-fotos").createSignedUrl(foto.foto_url, 3600);
+                return { ...foto, foto_url: data?.signedUrl || foto.foto_url };
+              }
+              return foto;
+            }));
+            setFotos(signedFotos);
+          } else {
+            setFotos([]);
+          }
  
          // Load payment info if paid
          if (l && l.status === "pago") {
