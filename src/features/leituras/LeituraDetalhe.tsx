@@ -86,32 +86,25 @@ export default function LeituraDetalhe() {
           return;
         }
 
+          // TODO: bucket leitura-fotos é público temporariamente. 
+          // Implementar signed URLs em iteração futura quando o problema 
+          // do duplo carregamento for diagnosticado.
           const { data: f } = await supabase.from("leitura_fotos").select("*").eq("leitura_id", id).order("ordem");
           
           if (f && f.length > 0) {
-            const signedFotos = await Promise.all(f.map(async (foto) => {
+            const photosWithPublicUrls = f.map((foto) => {
               let filePath = foto.foto_url;
-              // If it's a full URL, extract the path after 'leitura-fotos/'
               if (filePath.includes("leitura-fotos/")) {
                 filePath = filePath.split("leitura-fotos/").pop() || filePath;
               }
               
-              try {
-                const { data, error } = await supabase.storage
-                  .from("leitura-fotos")
-                  .createSignedUrl(filePath, 3600);
+              const { data: { publicUrl } } = supabase.storage
+                .from("leitura-fotos")
+                .getPublicUrl(filePath);
                 
-                if (error) {
-                  console.error("Erro ao gerar URL assinada para foto:", filePath, error);
-                  return foto;
-                }
-                return { ...foto, foto_url: data?.signedUrl || foto.foto_url };
-              } catch (e) {
-                console.error("Exceção ao gerar URL assinada:", e);
-                return foto;
-              }
-            }));
-            setFotos(signedFotos);
+              return { ...foto, foto_url: publicUrl };
+            });
+            setFotos(photosWithPublicUrls);
           } else {
             setFotos([]);
           }
@@ -128,8 +121,7 @@ export default function LeituraDetalhe() {
            }
          }
         
-        setLeitura(l);
-        setFotos(f || []);
+         setLeitura(l);
         
         if (l && l.data_leitura_previa) {
           const v = calcularVariacao(
