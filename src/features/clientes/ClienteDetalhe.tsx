@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
+ import { supabase } from "@/integrations/supabase/client";
  import { useClientes } from "./hooks/useClientes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
