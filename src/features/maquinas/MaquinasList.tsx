@@ -1,6 +1,5 @@
- import { useEffect, useState, useMemo, useDeferredValue } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+ import { useState, useDeferredValue } from "react";
+ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -10,52 +9,15 @@ import EmptyState from "@/components/EmptyState";
 import { useAuth, canManageData } from "@/contexts/AuthContext";
 import { Plus, Search, Cpu, Loader2 } from "lucide-react";
 
-interface Maquina {
-  id: string;
-  codigo_identificacao: string;
-  modelo: string | null;
-  status: string;
-  cliente_id: string;
-  clientes: { nome_ponto: string; cidade: string } | null;
-}
+ import { useMaquinas } from "./hooks/useMaquinas";
 
-export default function MaquinasList() {
-  const navigate = useNavigate();
-  const { role, user } = useAuth();
-  const canEdit = role !== 'usuario';
-  const [items, setItems] = useState<Maquina[]>([]);
-  const [loading, setLoading] = useState(true);
+ export default function MaquinasList() {
+   const navigate = useNavigate();
+   const { role } = useAuth();
+   const canEdit = role !== 'usuario';
    const [search, setSearch] = useState("");
    const deferredSearch = useDeferredValue(search);
-
-   useEffect(() => {
-     const load = async () => {
-       const { data, error } = await supabase
-         .from("maquinas")
-         .select("id, codigo_identificacao, modelo, status, cliente_id, clientes(nome_ponto, cidade)")
-         .order("codigo_identificacao");
-       
-       if (error) {
-         console.error("Erro ao carregar máquinas:", error);
-       } else {
-         setItems((data as unknown as Maquina[]) || []);
-       }
-       setLoading(false);
-     };
-     load();
-   }, []);
-
-   const filtered = useMemo(() => {
-     const s = deferredSearch.toLowerCase();
-     return items.filter((m) => {
-       return (
-         !s ||
-         m.codigo_identificacao.toLowerCase().includes(s) ||
-         (m.modelo || "").toLowerCase().includes(s) ||
-         (m.clientes?.nome_ponto || "").toLowerCase().includes(s)
-       );
-     });
-   }, [items, deferredSearch]);
+   const { maquinas: filtered, loading } = useMaquinas(deferredSearch);
 
   const statusVariant = (s: string) =>
     s === "ativa" ? "default" : s === "manutencao" ? "secondary" : "outline";
