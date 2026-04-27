@@ -1,4 +1,4 @@
- import { useEffect, useState, useMemo, useCallback } from "react";
+  import { useEffect, useState, useMemo, useCallback, memo } from "react";
  import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -34,19 +34,30 @@ import { calcularVariacao } from "@/utils/reading-calculations";
    const [items, setItems] = useState<any[]>([]);
    const isAdmin = role === 'admin' || role === 'master';
  
-   const selectedItems = useMemo(() => {
-     return items.filter(i => selectedIds.includes(i.id));
-   }, [selectedIds, items]);
+    const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+    const itemsById = useMemo(() => {
+      const m = new Map<string, any>();
+      for (const i of items) m.set(i.id, i);
+      return m;
+    }, [items]);
+    const selectedItems = useMemo(() => {
+      const out: any[] = [];
+      for (const id of selectedIds) {
+        const it = itemsById.get(id);
+        if (it) out.push(it);
+      }
+      return out;
+    }, [selectedIds, itemsById]);
  
    const totalComissao = useMemo(() => {
      return selectedItems.reduce((acc, curr) => acc + Number(curr.valor_comissao), 0);
    }, [selectedItems]);
  
-   const validation = useMemo(() => {
+    const validation = useMemo(() => {
      if (selectedIds.length === 0) return { valid: false, error: null };
      
      const firstClienteId = selectedItems[0]?.cliente_id;
-     const sameCliente = selectedItems.every(i => i.cliente_id === firstClienteId);
+      const sameCliente = selectedItems.every(i => i.cliente_id === firstClienteId);
      if (!sameCliente) return { valid: false, error: "Selecione leituras de um único cliente para registrar pagamento" };
      
      const allPending = selectedItems.every(i => i.status === 'pendente');
@@ -54,6 +65,13 @@ import { calcularVariacao } from "@/utils/reading-calculations";
      
      return { valid: true, error: null, clienteId: firstClienteId };
    }, [selectedItems, selectedIds]);
+    const toggleSelect = useCallback((id: string, checked: boolean) => {
+      setSelectedIds(prev => checked ? [...prev, id] : prev.filter(x => x !== id));
+    }, []);
+    const handlePayItem = useCallback((id: string, clienteId: string) => {
+      setBatchSelection({ ids: [id], clienteId });
+      setPaymentDialogOpen(true);
+    }, []);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
