@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+ import { useMaquinas } from "./hooks/useMaquinas";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,32 +24,29 @@ export default function MaquinaDetalhe() {
   const canEdit = role !== 'usuario';
   const showFinancials = true;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [maquina, setMaquina] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [leituras, setLeituras] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+   const { maquinas, loading: loadingList, deleteMaquina } = useMaquinas();
+   const [leituras, setLeituras] = useState<any[]>([]);
+   const [loadingInternal, setLoadingInternal] = useState(true);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
 
-  useEffect(() => {
-    const load = async () => {
-      const [{ data: m }, { data: l }] = await Promise.all([
-        supabase.from("maquinas").select("*, clientes(id, nome_ponto, cidade, percentual_comissao)").eq("id", id).maybeSingle(),
-        supabase.from("leituras").select("id, data_leitura, valor_faturado, valor_comissao, pelucias_saidas, status").eq("maquina_id", id).order("data_leitura", { ascending: false }).limit(20),
-      ]);
-      setMaquina(m);
-      setLeituras(l || []);
-      
-      if (m) {
-        const url = `${window.location.origin}/maquina/${m.id}`;
-        const dataUrl = await QRCode.toDataURL(url, { width: 400, margin: 2 });
-        setQrCodeDataUrl(dataUrl);
-      }
-      
-      setLoading(false);
-    };
-    load();
-  }, [id]);
+   const maquina = maquinas.find(m => m.id === id);
+ 
+   useEffect(() => {
+     const loadRelated = async () => {
+       if (!id) return;
+       const { data: l } = await supabase.from("leituras").select("id, data_leitura, valor_faturado, valor_comissao, pelucias_saidas, status").eq("maquina_id", id).order("data_leitura", { ascending: false }).limit(20);
+       setLeituras(l || []);
+       
+       if (maquina) {
+         const url = `${window.location.origin}/maquina/${maquina.id}`;
+         const dataUrl = await QRCode.toDataURL(url, { width: 400, margin: 2 });
+         setQrCodeDataUrl(dataUrl);
+       }
+       
+       setLoadingInternal(false);
+     };
+     if (!loadingList) loadRelated();
+   }, [id, maquina, loadingList]);
 
   const handleDownloadLabel = () => {
     if (!maquina) return;
@@ -86,17 +83,19 @@ export default function MaquinaDetalhe() {
     toast.success("Etiqueta PDF gerada");
   };
 
-  const handleDelete = async () => {
-    try {
-      const { error } = await supabase.from("maquinas").delete().eq("id", id);
-      if (error) throw error;
-      await logAudit({ acao: "DELETE_MAQUINA", tabela: "maquinas", registro_id: id, dados_antes: maquina });
-      toast.success("Máquina excluída");
-      navigate("/maquinas");
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há leituras)");
-    }
-  };
+   const handleDelete = async () => {
+     try {
+       if (!id) return;
+       await deleteMaquina(id);
+       await logAudit({ acao: "DELETE_MAQUINA", tabela: "maquinas", registro_id: id, dados_antes: maquina });
+       toast.success("Máquina excluída");
+       navigate("/maquinas");
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há leituras)");
+     }
+   };
+ 
+   const loading = loadingList || loadingInternal;
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!maquina) return <div>Máquina não encontrada</div>;
