@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+ import { useClientes } from "./hooks/useClientes";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,43 +28,43 @@ export default function ClienteDetalhe() {
   const canEdit = role !== 'usuario';
   const showFinancials = true;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [cliente, setCliente] = useState<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [maquinas, setMaquinas] = useState<any[]>([]);
+   const { clientes, loading: loadingList, deleteCliente, isDeleting } = useClientes();
+   const [maquinas, setMaquinas] = useState<any[]>([]);
    const [leituras, setLeituras] = useState<any[]>([]);
    const [totalPago, setTotalPago] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-       const [{ data: cli }, { data: maq }, { data: lei }, { data: pag }] = await Promise.all([
-        supabase.from("clientes").select("*").eq("id", id).maybeSingle(),
-        supabase.from("maquinas").select("id, codigo_identificacao, modelo, status").eq("cliente_id", id),
-        supabase.from("leituras").select("id, data_leitura, valor_faturado, valor_comissao, valor_liquido, status").eq("cliente_id", id).order("data_leitura", { ascending: false }).limit(20),
+   const [loadingInternal, setLoadingInternal] = useState(true);
+ 
+   const cliente = clientes.find(c => c.id === id);
+ 
+   useEffect(() => {
+     const loadRelated = async () => {
+       if (!id) return;
+       const [{ data: maq }, { data: lei }, { data: pag }] = await Promise.all([
+         supabase.from("maquinas").select("id, codigo_identificacao, modelo, status").eq("cliente_id", id),
+         supabase.from("leituras").select("id, data_leitura, valor_faturado, valor_comissao, valor_liquido, status").eq("cliente_id", id).order("data_leitura", { ascending: false }).limit(20),
          supabase.from("pagamentos").select("valor").eq("cliente_id", id),
-      ]);
-      setCliente(cli);
-      setMaquinas(maq || []);
-      setLeituras(lei || []);
+       ]);
+       setMaquinas(maq || []);
+       setLeituras(lei || []);
        setTotalPago(pag?.reduce((acc, p) => acc + Number(p.valor), 0) || 0);
-      setLoading(false);
-    };
-    load();
-  }, [id]);
-
-  const handleDelete = async () => {
-    try {
-      const { error } = await supabase.from("clientes").delete().eq("id", id);
-      if (error) throw error;
-      await logAudit({ acao: "DELETE_CLIENTE", tabela: "clientes", registro_id: id, dados_antes: cliente });
-      toast.success("Cliente excluído");
-      navigate("/clientes");
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há máquinas vinculadas)");
-    }
-  };
+       setLoadingInternal(false);
+     };
+     loadRelated();
+   }, [id]);
+ 
+   const handleDelete = async () => {
+     try {
+       if (!id) return;
+       await deleteCliente(id);
+       await logAudit({ acao: "DELETE_CLIENTE", tabela: "clientes", registro_id: id, dados_antes: cliente });
+       toast.success("Cliente excluído");
+       navigate("/clientes");
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro ao excluir (verifique se há máquinas vinculadas)");
+     }
+   };
+ 
+   const loading = loadingList || loadingInternal;
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
   if (!cliente) return <div>Cliente não encontrado</div>;
