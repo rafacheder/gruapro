@@ -24,7 +24,7 @@
  
        if (filters?.clienteId) q = q.eq("cliente_id", filters.clienteId);
        if (filters?.maquinaId) q = q.eq("maquina_id", filters.maquinaId);
-       if (filters?.status && filters.status !== "all") q = q.eq("status", filters.status);
+       if (filters?.status && filters.status !== "all") q = q.eq("status", filters.status as any);
        if (filters?.operadorId && filters.operadorId !== "all") q = q.eq("usuario_id", filters.operadorId);
        if (filters?.startDate) q = q.gte("data_leitura", filters.startDate.toISOString());
        if (filters?.endDate) q = q.lte("data_leitura", endOfDay(filters.endDate).toISOString());
