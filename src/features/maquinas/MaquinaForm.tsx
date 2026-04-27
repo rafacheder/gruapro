@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+ import { useMaquinas } from "./hooks/useMaquinas";
+ import { useClientes } from "@/hooks/useClientes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,16 +29,20 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function MaquinaForm() {
-  const { id } = useParams();
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { role } = useAuth();
-  const isEdit = !!id;
-  const [form, setForm] = useState<FormData>({
-    codigo_identificacao: "",
-    modelo: "",
-    cliente_id: searchParams.get("cliente") || "",
+ export default function MaquinaForm() {
+   const { id } = useParams();
+   const [searchParams] = useSearchParams();
+   const navigate = useNavigate();
+   const isEdit = !!id;
+ 
+   const { clientes } = useClientes();
+   const { maquinas, loading: loadingList, createMaquina, updateMaquina, isCreating, isUpdating } = useMaquinas();
+   const [loading, setLoading] = useState(isEdit);
+ 
+   const [form, setForm] = useState<FormData>({
+     codigo_identificacao: "",
+     modelo: "",
+     cliente_id: searchParams.get("cliente") || "",
      data_instalacao: "",
      status: "ativa",
      observacoes: "",
@@ -45,37 +50,29 @@ export default function MaquinaForm() {
      contador_entrada_inicial: 0,
      contador_saida_inicial: 0,
    });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [clientes, setClientes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(isEdit);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    supabase.from("clientes").select("id, nome_ponto, cidade").eq("ativo", true).order("nome_ponto").then(({ data }) => {
-      setClientes(data || []);
-    });
-    if (isEdit) {
-      supabase.from("maquinas").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
-        if (error || !data) {
-          toast.error("Máquina não encontrada");
-          navigate("/maquinas");
-          return;
-        }
-        setForm({
-          codigo_identificacao: data.codigo_identificacao,
-          modelo: data.modelo || "",
-          cliente_id: data.cliente_id,
-           data_instalacao: data.data_instalacao || "",
-           status: data.status,
-           observacoes: data.observacoes || "",
-           valor_por_credito: Number(data.valor_por_credito) || 1.00,
-           contador_entrada_inicial: data.contador_entrada_inicial || 0,
-           contador_saida_inicial: data.contador_saida_inicial || 0,
-         });
-        setLoading(false);
-      });
-    }
-  }, [id, isEdit, navigate]);
+ 
+   useEffect(() => {
+     if (isEdit && !loadingList) {
+       const data = maquinas.find(m => m.id === id);
+       if (!data) {
+         toast.error("Máquina não encontrada");
+         navigate("/maquinas");
+         return;
+       }
+       setForm({
+         codigo_identificacao: data.codigo_identificacao,
+         modelo: data.modelo || "",
+         cliente_id: data.cliente_id,
+         data_instalacao: data.data_instalacao || "",
+         status: data.status,
+         observacoes: data.observacoes || "",
+         valor_por_credito: Number(data.valor_por_credito) || 1.00,
+         contador_entrada_inicial: data.contador_entrada_inicial || 0,
+         contador_saida_inicial: data.contador_saida_inicial || 0,
+       });
+       setLoading(false);
+     }
+   }, [id, isEdit, navigate, maquinas, loadingList]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,31 +81,26 @@ export default function MaquinaForm() {
       toast.error(parsed.error.issues[0]?.message || "Dados inválidos");
       return;
     }
-    setSaving(true);
-    try {
-      const dbPayload = {
-        ...parsed.data,
-        modelo: parsed.data.modelo || null,
-        observacoes: parsed.data.observacoes || null,
-        data_instalacao: parsed.data.data_instalacao || null,
-      };
-      if (isEdit) {
-        const { error } = await supabase.from("maquinas").update(dbPayload).eq("id", id);
-        if (error) throw error;
-        await logAudit({ acao: "UPDATE_MAQUINA", tabela: "maquinas", registro_id: id, dados_depois: dbPayload });
-        toast.success("Máquina atualizada");
-      } else {
-        const { data, error } = await supabase.from("maquinas").insert(dbPayload).select("id").single();
-        if (error) throw error;
-        await logAudit({ acao: "CREATE_MAQUINA", tabela: "maquinas", registro_id: data.id, dados_depois: dbPayload });
-        toast.success("Máquina cadastrada");
-      }
-      navigate("/maquinas");
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    } finally {
-      setSaving(false);
-    }
+     try {
+       const dbPayload = {
+         ...parsed.data,
+         modelo: parsed.data.modelo || null,
+         observacoes: parsed.data.observacoes || null,
+         data_instalacao: parsed.data.data_instalacao || null,
+       } as any;
+       if (isEdit) {
+         await updateMaquina({ id, ...dbPayload });
+         await logAudit({ acao: "UPDATE_MAQUINA", tabela: "maquinas", registro_id: id, dados_depois: dbPayload });
+         toast.success("Máquina atualizada");
+       } else {
+         const data = await createMaquina(dbPayload);
+         await logAudit({ acao: "CREATE_MAQUINA", tabela: "maquinas", registro_id: data.id, dados_depois: dbPayload });
+         toast.success("Máquina cadastrada");
+       }
+       navigate("/maquinas");
+     } catch (err: unknown) {
+       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+     }
   };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-accent" /></div>;
@@ -196,9 +188,9 @@ export default function MaquinaForm() {
            </div>
          </Card>
         <div className="flex gap-3">
-          <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="flex-1">Cancelar</Button>
-          <Button type="submit" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+           <Button type="button" variant="secondary" onClick={() => navigate(-1)} className="flex-1">Cancelar</Button>
+           <Button type="submit" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90 shadow-accent" disabled={isCreating || isUpdating}>
+             {(isCreating || isUpdating) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar
           </Button>
         </div>
