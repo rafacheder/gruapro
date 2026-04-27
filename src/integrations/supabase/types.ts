@@ -657,14 +657,6 @@ export type Database = {
       }
     }
     Functions: {
-      get_public_machine: {
-        Args: { machine_id: string }
-        Returns: {
-          ativo: boolean
-          codigo_identificacao: string
-          modelo: string
-        }[]
-      }
       get_public_machine_v2: {
         Args: { machine_id: string }
         Returns: {

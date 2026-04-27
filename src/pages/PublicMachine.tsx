@@ -16,18 +16,16 @@ export default function PublicMachine() {
    useEffect(() => {
      const load = async () => {
        if (!id) return;
-       const { data, error } = await supabase.rpc("get_public_machine", { 
+        const { data, error } = await supabase.rpc("get_public_machine_v2", { 
          machine_id: id 
        });
  
-       if (error) {
-         console.error("Erro ao carregar máquina pública:", error);
-         setMaquina(null);
-       } else if (data && data.length > 0) {
-         setMaquina(data[0]);
-       } else {
-         setMaquina(null);
-       }
+        if (error || !data) {
+          console.error("Erro ao carregar máquina pública:", error);
+          setMaquina(null);
+        } else {
+          setMaquina(data);
+        }
        setLoading(false);
      };
      load();
