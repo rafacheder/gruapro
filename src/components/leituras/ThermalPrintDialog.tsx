@@ -67,6 +67,7 @@
        {data.leituras.map((l, i) => (
          <div key={l.id} style={{ marginBottom: '4mm' }}>
            <div style={{ fontWeight: 'bold' }}>{i + 1} - {l.maquina_codigo || l.maquinas?.codigo_identificacao}</div>
+          <div style={{ whiteSpace: 'pre' }}>{"         ENT   SAI"}</div>
            <div style={{ whiteSpace: 'pre' }}>  ANT  {String(l.contador_entrada_anterior ?? 0).padStart(5)} {String(l.contador_saida_anterior ?? 0).padStart(5)}</div>
            <div style={{ whiteSpace: 'pre' }}>  ATU  {String(l.contador_entrada_atual ?? 0).padStart(5)} {String(l.contador_saida_atual ?? 0).padStart(5)}</div>
            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
