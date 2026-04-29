@@ -7,10 +7,8 @@
  import { ScrollArea } from "@/components/ui/scroll-area";
  import PageHeader from "@/components/PageHeader";
  import { Loader2, AlertCircle, CheckCircle2, Calendar } from "lucide-react";
- import { formatBRL, formatDateTime } from "@/lib/format";
+ import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
  import { toast } from "sonner";
- import { format } from "date-fns";
- import { ptBR } from "date-fns/locale";
  
  export default function ReconciliacaoView() {
    const [loading, setLoading] = useState(true);
@@ -184,7 +182,7 @@
                            }}
                          />
                          <label htmlFor={`lei-${l.id}`} className="flex-1 text-xs cursor-pointer flex justify-between">
-                           <span>{format(new Date(l.data_leitura), "dd/MM/yyyy")} — {l.maquinas?.codigo_identificacao}</span>
+                          <span>{formatDate(l.data_leitura)} — {l.maquinas?.codigo_identificacao}</span>
                            <span className="font-bold text-accent">{formatBRL(l.valor_comissao)}</span>
                          </label>
                        </div>
