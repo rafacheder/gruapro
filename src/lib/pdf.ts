@@ -281,7 +281,7 @@ import { APP_VERSION } from "@/config/version";
    doc.text(`        ${nowStr[1]}`, margin, y); y += 3;
    doc.text(`Por: ${truncate(operadorNome, 20)}`, margin, y); y += 3;
    doc.text(`Doc: ${docId}`, margin, y); y += 3;
-   doc.text(`Sistema v2.0.0`, margin, y); y += 5;
+   doc.text(`Sistema v${APP_VERSION}`, margin, y); y += 5;
  
    try {
      const qrUrl = `${window.location.origin}/relatorio/${docId}`;
