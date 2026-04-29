@@ -91,7 +91,7 @@ export default function RegisterPaymentDialog({
     defaultValues: {
        cliente_id: initialClienteId || "",
       valor: "",
-      data_pagamento: new Date().toISOString().slice(0, 16),
+      data_pagamento: nowLocalForInput(),
       forma_pagamento: "pix",
       observacoes: "",
        avulso: false,
@@ -107,7 +107,7 @@ export default function RegisterPaymentDialog({
       form.reset({
          cliente_id: initialClienteId || "",
         valor: "",
-        data_pagamento: new Date().toISOString().slice(0, 16),
+        data_pagamento: nowLocalForInput(),
         forma_pagamento: "pix",
         observacoes: "",
          avulso: false,
