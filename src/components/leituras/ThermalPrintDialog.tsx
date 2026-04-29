@@ -11,6 +11,7 @@
  import { formatBRL, formatDateTime } from "@/lib/format";
  import { useAuth } from "@/contexts/AuthContext";
  import { logAudit } from "@/lib/audit";
+import { APP_VERSION } from "@/config/version";
  
  interface ThermalPrintDialogProps {
    open: boolean;
@@ -137,7 +138,7 @@
        <div style={{ fontSize: '7pt', marginTop: '4mm' }}>
          Gerado: {formatDateTime(new Date())}<br />
          Por: {operador}<br />
-         Sistema v2.0.0
+          Sistema v{APP_VERSION}
        </div>
      </div>
    );
