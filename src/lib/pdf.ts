@@ -227,6 +227,7 @@
      doc.text(`${index + 1} - ${truncate(l.maquina_codigo, 15)}`, margin, y); y += 4;
      
      doc.setFont("courier", "normal");
+      doc.text("        ENT   SAI", margin, y); y += 4;
      doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, margin, y); y += 4;
      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, margin, y); y += 4;
      
