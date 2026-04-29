@@ -83,7 +83,7 @@
                  <div className="flex justify-between items-start">
                    <div>
                      <div className="text-sm font-medium">Leitura offline</div>
-                     <div className="text-xs text-muted-foreground">{new Date(leitura.created_at).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">{formatDateTime(leitura.created_at)}</div>
                    </div>
                    <Badge variant={leitura.status === 'error' ? 'destructive' : 'outline'}>
                      {leitura.status}
@@ -132,7 +132,7 @@
                  <div className="flex justify-between items-start">
                    <div>
                      <div className="text-sm font-medium">Leitura offline</div>
-                     <div className="text-xs text-muted-foreground">{new Date(leitura.created_at).toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">{formatDateTime(leitura.created_at)}</div>
                    </div>
                    <Badge variant="outline">Pendente</Badge>
                  </div>
