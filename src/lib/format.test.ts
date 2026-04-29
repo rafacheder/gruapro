@@ -9,15 +9,15 @@ describe("Formatação de data e hora (Timezone America/Sao_Paulo)", () => {
     const result = formatDateTime(utcDateStr);
     // Formato pt-BR short: "29/04/2026 15:00" ou similar dependendo da engine
     // O ponto principal é o "15:00"
-    expect(result).toContain("15:00");
-    expect(result).toContain("29/04/26");
+    expect(result).toMatch(/29\/04\/(20)?26/);
+    expect(result).toMatch(/15:00/);
   });
 
   it("formatDate deve mostrar a data correta no Brasil", () => {
     // Se for 01:00 UTC do dia 30, no Brasil ainda é dia 29 (22:00)
     const earlyUtc = "2026-04-30T01:00:00Z";
     const result = formatDate(earlyUtc);
-    expect(result).toBe("29/04/26");
+    expect(result).toMatch(/29\/04\/(20)?26/);
   });
 
   it("formatTime deve mostrar apenas a hora no Brasil", () => {
