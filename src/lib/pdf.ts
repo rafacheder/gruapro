@@ -1,4 +1,5 @@
  import jsPDF from "jspdf";
+import { APP_VERSION } from "@/config/version";
  import autoTable from "jspdf-autotable";
  import QRCode from "qrcode";
  import { sha256Hex } from "./sha256";
