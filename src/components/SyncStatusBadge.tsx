@@ -14,7 +14,7 @@
  import { syncPendingLeituras } from "@/services/sync-service";
  import { useState } from "react";
  import { toast } from "sonner";
- import { formatBRL } from "@/lib/format";
+ import { formatBRL, formatDateTime } from "@/lib/format";
  
  export default function SyncStatusBadge() {
    const isOnline = useOnlineStatus();
