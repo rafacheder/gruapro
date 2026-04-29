@@ -60,11 +60,7 @@ export default function Dashboard() {
     <div>
       <PageHeader
         title={`Olá, ${firstName}`}
-        description={
-          role === "usuario"
-            ? "Pronto para fazer leituras em campo?"
-            : "Resumo geral do sistema"
-        }
+        description="Resumo geral do sistema"
         action={
           <Button
             onClick={() => navigate("/leituras/nova")}
@@ -144,9 +140,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {role !== 'usuario' && (
-        <AlertsList alertas={alertas} loadingAlerts={loadingAlerts} />
-      )}
+      <AlertsList alertas={alertas} loadingAlerts={loadingAlerts} />
     </div>
   );
 }
