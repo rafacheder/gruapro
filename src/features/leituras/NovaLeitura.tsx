@@ -70,6 +70,7 @@ export default function NovaLeitura() {
             observacoes={observacoes}
             setObservacoes={setObservacoes}
             isOnline={isOnline}
+            ultimaLeitura={ultimaLeitura}
           />
 
           <ReadingCalculationsPanel
