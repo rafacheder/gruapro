@@ -34,7 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
  import { Loader2, Calendar } from "lucide-react";
 import { logAudit } from "@/lib/audit";
- import { format } from "date-fns";
+ import { formatBRL, formatDate } from "@/lib/format";
  import { ptBR } from "date-fns/locale";
 
 interface RegisterPaymentDialogProps {
