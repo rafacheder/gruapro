@@ -35,7 +35,6 @@ import { toast } from "sonner";
  import { Loader2, Calendar } from "lucide-react";
 import { logAudit } from "@/lib/audit";
  import { formatBRL, formatDate } from "@/lib/format";
- import { ptBR } from "date-fns/locale";
 
 interface RegisterPaymentDialogProps {
   open: boolean;
@@ -331,13 +330,13 @@ export default function RegisterPaymentDialog({
                              >
                                <span className="flex items-center gap-2">
                                  <Calendar className="h-3 w-3 text-muted-foreground" />
-                                 {format(new Date(l.data_leitura), "dd/MM/yyyy", { locale: ptBR })}
+                                  {formatDate(l.data_leitura)}
                                  <Badge variant="outline" className="text-[10px] py-0 h-4">
                                    {l.maquinas?.codigo_identificacao || "N/A"}
                                  </Badge>
                                </span>
                                <span className="font-semibold text-accent">
-                                 R$ {l.valor_comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  {formatBRL(l.valor_comissao)}
                                </span>
                              </label>
                            </div>
