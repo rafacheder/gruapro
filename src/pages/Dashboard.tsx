@@ -29,15 +29,38 @@ export default function Dashboard() {
   const showFinancials = role === "admin" || role === "master";
   const firstName = (nome || "").split(" ")[0] || "Olá";
 
+  if (role === "usuario") {
+    return (
+      <div className="space-y-6 pt-4">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Olá, {firstName}</h1>
+          <p className="text-muted-foreground">O que deseja fazer hoje?</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button
+            onClick={() => navigate("/leituras/nova")}
+            className="h-[120px] md:h-[150px] text-xl md:text-2xl font-bold bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg"
+          >
+            <Plus className="h-8 w-8 mr-3 md:h-10 md:w-10" /> NOVA LEITURA
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/clientes")}
+            className="h-[120px] md:h-[150px] text-xl md:text-2xl font-bold border-2"
+          >
+            <Users className="h-8 w-8 mr-3 md:h-10 md:w-10" /> CLIENTES
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
         title={`Olá, ${firstName}`}
-        description={
-          role === "usuario"
-            ? "Pronto para fazer leituras em campo?"
-            : "Resumo geral do sistema"
-        }
+        description="Resumo geral do sistema"
         action={
           <Button
             onClick={() => navigate("/leituras/nova")}
@@ -117,9 +140,7 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      {role !== 'usuario' && (
-        <AlertsList alertas={alertas} loadingAlerts={loadingAlerts} />
-      )}
+      <AlertsList alertas={alertas} loadingAlerts={loadingAlerts} />
     </div>
   );
 }
