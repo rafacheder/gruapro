@@ -16,33 +16,37 @@ export default defineConfig(({ mode }) => ({
    plugins: [
      react(),
      VitePWA({
-       registerType: "autoUpdate",
+       registerType: "prompt",
+       devOptions: { enabled: false },
        includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg"],
        manifest: {
-         name: "Sistema de Leituras",
-         short_name: "Leituras",
-         description: "Sistema de gestão de leituras de máquinas",
-         theme_color: "#ffffff",
-         background_color: "#ffffff",
+         name: "GruaPro",
+         short_name: "GruaPro",
+         description: "Sistema de gestão de máquinas de pelúcias",
+         theme_color: "#1E5BB8",
+         background_color: "#1A1F2E",
          display: "standalone",
          icons: [
            {
-             src: "placeholder.svg",
-             sizes: "192x192",
-             type: "image/svg+xml",
-             purpose: "any maskable",
-           },
-           {
-             src: "placeholder.svg",
+             src: "logo.png",
              sizes: "512x512",
-             type: "image/svg+xml",
-             purpose: "any maskable",
+             type: "image/png",
+             purpose: "any",
            },
          ],
        },
        workbox: {
          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+         cleanupOutdatedCaches: true,
+         skipWaiting: false,
+         clientsClaim: true,
+         navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
          runtimeCaching: [
+           {
+             urlPattern: ({ request }) => request.mode === "navigate",
+             handler: "NetworkFirst",
+             options: { cacheName: "html", networkTimeoutSeconds: 3 },
+           },
            {
              urlPattern: ({ url }) => url.origin === "https://vtounmxbzqphtzegxzdi.supabase.co",
              handler: "NetworkFirst",

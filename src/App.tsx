@@ -13,6 +13,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
  import ProtectedRoute from "@/components/ProtectedRoute";
  import AppShell from "@/components/AppShell";
  import SyncManager from "@/components/SyncManager";
+import { UpdateBannerGate } from "@/components/UpdateBannerGate";
 import ClientesList from "@/features/clientes/ClientesList";
 import ClienteForm from "@/features/clientes/ClienteForm";
 import ClienteDetalhe from "@/features/clientes/ClienteDetalhe";
@@ -50,6 +51,7 @@ const Shell = ({ children }: { children: React.ReactNode }) => (
    <QueryClientProvider client={queryClient}>
      <TooltipProvider>
        <SyncManager />
+       <UpdateBannerGate />
        <Toaster />
        <Sonner />
        <BrowserRouter>

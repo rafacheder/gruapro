@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { APP_VERSION } from "@/config/version";
 
 const navItems = [
   { to: "/", label: "Início", icon: LayoutDashboard, roles: ["master", "admin", "usuario"] as const },
@@ -102,6 +103,9 @@ export default function AppShell({ children }: { children: ReactNode }) {
            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
              <LogOut className="h-4 w-4 mr-2" /> Sair
            </Button>
+           <div className="px-3 pt-1 text-[10px] text-muted-foreground/70 text-center">
+             v{APP_VERSION}
+           </div>
          </div>
       </aside>
 
