@@ -491,6 +491,7 @@ interface LeituraPdf {
     if (hasCounters) {
       doc.setFont("courier", "normal");
       doc.setFontSize(6);
+     doc.text("        ENT   SAI", 2, y); y += 3;
       doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, 2, y); y += 3;
       doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, 2, y); y += 4;
       doc.line(2, y-1, 55, y-1);
