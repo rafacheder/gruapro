@@ -25,14 +25,15 @@ const dateTimeSecondsFormatter = new Intl.DateTimeFormat("pt-BR", {
  export const formatBRL = (v: number | null | undefined) => brlFormatter.format(Number(v || 0));
  export const formatNumber = (v: number | null | undefined) => numberFormatter.format(Number(v || 0));
  export const formatPercent = (v: number) => percentFormatter.format(v) + "%";
-export const formatDateTime = (iso: string | Date | null | undefined) =>
-  iso ? dateTimeFormatter.format(new Date(iso)) : "—";
-export const formatDate = (iso: string | Date | null | undefined) =>
-  iso ? dateFormatter.format(new Date(iso)) : "—";
-export const formatTime = (iso: string | Date | null | undefined) =>
-  iso ? timeFormatter.format(new Date(iso)) : "—";
-export const formatDateTimeWithSeconds = (iso: string | Date | null | undefined) =>
-  iso ? dateTimeSecondsFormatter.format(new Date(iso)) : "—";
+type DateInput = string | number | Date | null | undefined;
+export const formatDateTime = (iso: DateInput) =>
+  iso != null ? dateTimeFormatter.format(new Date(iso)) : "—";
+export const formatDate = (iso: DateInput) =>
+  iso != null ? dateFormatter.format(new Date(iso)) : "—";
+export const formatTime = (iso: DateInput) =>
+  iso != null ? timeFormatter.format(new Date(iso)) : "—";
+export const formatDateTimeWithSeconds = (iso: DateInput) =>
+  iso != null ? dateTimeSecondsFormatter.format(new Date(iso)) : "—";
 
 export const maskPhone = (v: string) => {
   const d = (v || "").replace(/\D/g, "").slice(0, 11);
