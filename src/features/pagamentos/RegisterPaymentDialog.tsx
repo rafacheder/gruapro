@@ -35,6 +35,17 @@ import { toast } from "sonner";
  import { Loader2, Calendar } from "lucide-react";
 import { logAudit } from "@/lib/audit";
  import { formatBRL, formatDate } from "@/lib/format";
+// Retorna "YYYY-MM-DDTHH:mm" no horário LOCAL (para preencher inputs
+// do tipo datetime-local sem deslocamento de fuso).
+function nowLocalForInput(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
+}
+
 
 interface RegisterPaymentDialogProps {
   open: boolean;
