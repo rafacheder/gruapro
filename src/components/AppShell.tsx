@@ -41,7 +41,7 @@ const NavList = memo(({ items, currentPath, onClick }: NavListProps) => (
           onClick={onClick}
           className={cn(
             "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
-            active ? "bg-accent text-accent-foreground shadow-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+            active ? "bg-primary text-primary-foreground border-l-2 border-accent" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
           )}
         >
           <Icon className="h-4 w-4" />
@@ -152,7 +152,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 className={cn(
                   "flex flex-col items-center gap-0.5 px-3 py-1 rounded text-xs",
-                  active ? "text-accent" : "text-muted-foreground"
+                  active ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5" />
