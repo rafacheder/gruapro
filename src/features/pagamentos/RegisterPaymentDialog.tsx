@@ -34,8 +34,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
  import { Loader2, Calendar } from "lucide-react";
 import { logAudit } from "@/lib/audit";
- import { format } from "date-fns";
- import { ptBR } from "date-fns/locale";
+ import { formatBRL, formatDate } from "@/lib/format";
+// Retorna "YYYY-MM-DDTHH:mm" no horário LOCAL (para preencher inputs
+// do tipo datetime-local sem deslocamento de fuso).
+function nowLocalForInput(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
+}
+
 
 interface RegisterPaymentDialogProps {
   open: boolean;
@@ -81,7 +91,7 @@ export default function RegisterPaymentDialog({
     defaultValues: {
        cliente_id: initialClienteId || "",
       valor: "",
-      data_pagamento: new Date().toISOString().slice(0, 16),
+      data_pagamento: nowLocalForInput(),
       forma_pagamento: "pix",
       observacoes: "",
        avulso: false,
@@ -97,7 +107,7 @@ export default function RegisterPaymentDialog({
       form.reset({
          cliente_id: initialClienteId || "",
         valor: "",
-        data_pagamento: new Date().toISOString().slice(0, 16),
+        data_pagamento: nowLocalForInput(),
         forma_pagamento: "pix",
         observacoes: "",
          avulso: false,
@@ -331,13 +341,13 @@ export default function RegisterPaymentDialog({
                              >
                                <span className="flex items-center gap-2">
                                  <Calendar className="h-3 w-3 text-muted-foreground" />
-                                 {format(new Date(l.data_leitura), "dd/MM/yyyy", { locale: ptBR })}
+                                  {formatDate(l.data_leitura)}
                                  <Badge variant="outline" className="text-[10px] py-0 h-4">
                                    {l.maquinas?.codigo_identificacao || "N/A"}
                                  </Badge>
                                </span>
                                <span className="font-semibold text-accent">
-                                 R$ {l.valor_comissao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  {formatBRL(l.valor_comissao)}
                                </span>
                              </label>
                            </div>

@@ -11,12 +11,29 @@
    dateStyle: "short",
    timeZone: "America/Sao_Paulo",
  });
+const timeFormatter = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+const dateTimeSecondsFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeStyle: "medium",
+  timeZone: "America/Sao_Paulo",
+});
  
  export const formatBRL = (v: number | null | undefined) => brlFormatter.format(Number(v || 0));
  export const formatNumber = (v: number | null | undefined) => numberFormatter.format(Number(v || 0));
  export const formatPercent = (v: number) => percentFormatter.format(v) + "%";
- export const formatDateTime = (iso: string | Date) => dateTimeFormatter.format(new Date(iso));
- export const formatDate = (iso: string | Date) => dateFormatter.format(new Date(iso));
+type DateInput = string | number | Date | null | undefined;
+export const formatDateTime = (iso: DateInput) =>
+  iso != null ? dateTimeFormatter.format(new Date(iso)) : "—";
+export const formatDate = (iso: DateInput) =>
+  iso != null ? dateFormatter.format(new Date(iso)) : "—";
+export const formatTime = (iso: DateInput) =>
+  iso != null ? timeFormatter.format(new Date(iso)) : "—";
+export const formatDateTimeWithSeconds = (iso: DateInput) =>
+  iso != null ? dateTimeSecondsFormatter.format(new Date(iso)) : "—";
 
 export const maskPhone = (v: string) => {
   const d = (v || "").replace(/\D/g, "").slice(0, 11);
