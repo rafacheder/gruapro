@@ -71,6 +71,8 @@ import { APP_VERSION } from "@/config/version";
           <div style={{ whiteSpace: 'pre' }}>{"        ENT   SAI"}</div>
            <div style={{ whiteSpace: 'pre' }}>  ANT  {String(l.contador_entrada_anterior ?? 0).padStart(5)} {String(l.contador_saida_anterior ?? 0).padStart(5)}</div>
            <div style={{ whiteSpace: 'pre' }}>  ATU  {String(l.contador_entrada_atual ?? 0).padStart(5)} {String(l.contador_saida_atual ?? 0).padStart(5)}</div>
+          <div style={{ whiteSpace: 'pre' }}>  ----------------</div>
+          <div style={{ whiteSpace: 'pre' }}>  DIF  {String(((l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0))).padStart(5)} {String(((l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0))).padStart(5)}</div>
            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
              <span>  Total</span>
              <span>{formatBRL(l.valor_faturado)}</span>

@@ -231,7 +231,9 @@ import { APP_VERSION } from "@/config/version";
       doc.text("        ENT   SAI", margin, y); y += 4;
      doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, margin, y); y += 4;
      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, margin, y); y += 4;
-     
+    doc.text("  ----------------", margin, y); y += 4;
+    doc.text(`  DIF  ${String(entradaDelta).padStart(5)} ${String(saidaDelta).padStart(5)}`, margin, y); y += 4;
+
      doc.text("  Total", margin, y);
      doc.text(formatBRL(l.valor_faturado).padStart(12), rightAlignX, y, { align: "right" }); y += 4;
      
@@ -494,9 +496,9 @@ interface LeituraPdf {
       doc.setFontSize(6);
      doc.text("        ENT   SAI", 2, y); y += 3;
       doc.text(`  ANT  ${String(l.contador_entrada_anterior ?? 0).padStart(5)} ${String(l.contador_saida_anterior ?? 0).padStart(5)}`, 2, y); y += 3;
-      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, 2, y); y += 4;
-      doc.line(2, y-1, 55, y-1);
-      y += 1;
+      doc.text(`  ATU  ${String(l.contador_entrada_atual ?? 0).padStart(5)} ${String(l.contador_saida_atual ?? 0).padStart(5)}`, 2, y); y += 3;
+      doc.text("  ----------------", 2, y); y += 3;
+      doc.text(`  DIF  ${String((l.contador_entrada_atual ?? 0) - (l.contador_entrada_anterior ?? 0)).padStart(5)} ${String((l.contador_saida_atual ?? 0) - (l.contador_saida_anterior ?? 0)).padStart(5)}`, 2, y); y += 4;
     }
    
     doc.setFontSize(7);
