@@ -8,51 +8,51 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Tema escuro industrial (default) — azul petróleo + laranja */
-    --background: 200 30% 8%;
-    --foreground: 200 15% 95%;
+    /* Tema escuro alinhado à logo GruaPro — azul royal + laranja */
+    --background: 220 15% 10%;
+    --foreground: 0 0% 95%;
 
-    --card: 200 28% 11%;
-    --card-foreground: 200 15% 95%;
+    --card: 220 15% 14%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 200 28% 11%;
-    --popover-foreground: 200 15% 95%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 192 71% 21%;            /* azul petróleo #0F4C5C */
-    --primary-foreground: 200 15% 98%;
-    --primary-glow: 192 60% 35%;
+    --primary: 214 71% 42%;            /* azul royal #1E5BB8 */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 214 71% 55%;
 
-    --secondary: 200 25% 15%;
-    --secondary-foreground: 200 15% 95%;
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 0 0% 95%;
 
-    --muted: 200 20% 16%;
-    --muted-foreground: 200 10% 65%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 13 76% 61%;              /* laranja #E76F51 */
-    --accent-foreground: 200 30% 8%;
-    --accent-glow: 18 85% 65%;
+    --accent: 25 90% 58%;              /* laranja #F39237 */
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 25 90% 65%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 4 64% 48%;          /* vermelho #C8362C */
+    --destructive-foreground: 0 0% 100%;
 
     --success: 145 60% 42%;
-    --success-foreground: 0 0% 98%;
+    --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 55%;
-    --warning-foreground: 200 30% 8%;
+    --warning: 45 100% 51%;            /* amarelo #FFC107 */
+    --warning-foreground: 220 15% 10%;
 
-    --border: 200 25% 18%;
-    --input: 200 25% 18%;
-    --ring: 13 76% 61%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 214 71% 42%;
 
     --radius: 0.625rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(192 71% 21%), hsl(192 60% 35%));
-    --gradient-accent: linear-gradient(135deg, hsl(13 76% 61%), hsl(18 85% 65%));
-    --gradient-surface: linear-gradient(180deg, hsl(200 28% 11%), hsl(200 30% 8%));
-    --shadow-card: 0 10px 30px -10px hsl(200 50% 4% / 0.6);
-    --shadow-elevated: 0 20px 50px -20px hsl(200 60% 2% / 0.8);
-    --shadow-accent: 0 8px 24px -8px hsl(13 76% 50% / 0.45);
+    --gradient-primary: linear-gradient(135deg, hsl(214 71% 42%), hsl(214 71% 55%));
+    --gradient-accent: linear-gradient(135deg, hsl(25 90% 58%), hsl(25 90% 65%));
+    --gradient-surface: linear-gradient(180deg, hsl(220 15% 14%), hsl(220 15% 10%));
+    --shadow-card: 0 10px 30px -10px hsl(220 40% 4% / 0.6);
+    --shadow-elevated: 0 20px 50px -20px hsl(220 50% 2% / 0.8);
+    --shadow-accent: 0 8px 24px -8px hsl(25 90% 50% / 0.45);
 
     --sidebar-background: 0 0% 98%;
 
