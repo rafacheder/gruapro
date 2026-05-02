@@ -1,3 +1,4 @@
+ import legacy from "@vitejs/plugin-legacy";
  import { defineConfig } from "vite";
  import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react-swc";
@@ -13,8 +14,20 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
+    build: {
+      target: ['es2018', 'chrome70', 'safari12'],
+      cssTarget: ['chrome70', 'safari12'],
+    },
+    esbuild: {
+      target: 'es2018',
+    },
    plugins: [
      react(),
+      legacy({
+        targets: ['Android >= 7', 'Chrome >= 70', 'Safari >= 12', 'iOS >= 12'],
+        additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+        modernPolyfills: true,
+      }),
      VitePWA({
        registerType: "prompt",
        devOptions: { enabled: false },
@@ -38,7 +51,7 @@ export default defineConfig(({ mode }) => ({
        workbox: {
          globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
          cleanupOutdatedCaches: true,
-         skipWaiting: false,
+          skipWaiting: true,
          clientsClaim: true,
          navigateFallbackDenylist: [/^\/~oauth/, /^\/api/],
          runtimeCaching: [

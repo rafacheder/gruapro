@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+ import { RootErrorBoundary } from "./components/RootErrorBoundary";
 import "./index.css";
 
 // Guard: nunca registrar service worker dentro de iframes ou hosts de preview.
@@ -26,4 +27,8 @@ if ((isPreviewHost || isInIframe) && "serviceWorker" in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+ createRoot(document.getElementById("root")!).render(
+   <RootErrorBoundary>
+     <App />
+   </RootErrorBoundary>
+ );
