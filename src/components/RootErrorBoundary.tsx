@@ -30,29 +30,24 @@
            padding: '20px',
            fontFamily: 'sans-serif',
            textAlign: 'center',
-           backgroundColor: '#f8f9fa',
+            backgroundColor: '#1a1f2e',
+            color: '#fff',
            height: '100vh',
            display: 'flex',
            flexDirection: 'column',
            justifyContent: 'center',
            alignItems: 'center'
          }}>
-           <h1 style={{ color: '#dc3545' }}>Algo deu errado</h1>
+            <h2 style={{ color: '#fff' }}>Algo deu errado</h2>
            <p>O aplicativo encontrou um erro. Tente:</p>
-           <ul style={{ textAlign: 'left', display: 'inline-block', marginBottom: '20px' }}>
+            <ol style={{ textAlign: 'left', display: 'inline-block', marginBottom: '20px' }}>
              <li>Atualizar a página (botão refresh)</li>
              <li>Fechar e abrir o app novamente</li>
              <li>Atualizar o Chrome do seu celular</li>
-           </ul>
-           <div style={{
-             fontSize: '12px',
-             color: '#6c757d',
-             marginBottom: '20px',
-             maxWidth: '90%',
-             overflow: 'auto'
-           }}>
-             Detalhe técnico: {this.state.error?.message}
-           </div>
+            </ol>
+            <p style={{ fontSize: '12px', marginTop: '20px', color: '#888' }}>
+              Detalhe técnico: {this.state.error?.message}
+            </p>
            <button
              onClick={() => window.location.reload()}
              style={{
