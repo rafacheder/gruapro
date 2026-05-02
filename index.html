@@ -25,8 +25,45 @@
   <meta name="twitter:description" content="Sistema web para gerenciar máquinas de grua de pelúcias, registrando faturamento, pelúcias saídas e gerando relatórios.">
 </head>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+   <body style="margin: 0; background-color: #1A1F2E;">
+     <div id="root">
+       <div id="initial-loader" style="
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+         justify-content: center;
+         height: 100vh;
+         width: 100vw;
+         font-family: sans-serif;
+         color: white;
+         text-align: center;
+         background-color: #1A1F2E;
+       ">
+         <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">GruaPro</div>
+         <div style="font-size: 16px; margin-bottom: 10px;">Carregando...</div>
+         <div style="
+           width: 40px;
+           height: 40px;
+           border: 4px solid rgba(255,255,255,0.1);
+           border-left-color: #1E5BB8;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+           margin-bottom: 20px;
+         "></div>
+         <style>
+           @keyframes spin { to { transform: rotate(360deg); } }
+         </style>
+         <div id="slow-connection-msg" style="display: none; font-size: 14px; color: #94a3b8; max-width: 80%; padding: 0 20px;">
+           Está demorando... Verifique sua conexão ou tente atualizar o Chrome do seu celular.
+         </div>
+         <script>
+           setTimeout(function() {
+             var msg = document.getElementById('slow-connection-msg');
+             if (msg) msg.style.display = 'block';
+           }, 8000);
+         </script>
+       </div>
+     </div>
+     <script type="module" src="/src/main.tsx"></script>
+   </body>
 </html>
