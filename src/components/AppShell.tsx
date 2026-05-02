@@ -126,10 +126,13 @@ export default function AppShell({ children }: { children: ReactNode }) {
                <div className="px-3 py-4">
                  <NavList items={visible} currentPath={location.pathname} onClick={closeSheet} />
                </div>
-              <div className="border-t border-border p-3">
+              <div className="border-t border-border p-3 space-y-3">
                 <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" /> Sair
                 </Button>
+                <div className="text-[10px] text-muted-foreground/70 text-center">
+                  v{APP_VERSION}
+                </div>
               </div>
             </SheetContent>
           </Sheet>

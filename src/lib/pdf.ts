@@ -158,7 +158,7 @@ import { APP_VERSION } from "@/config/version";
      doc.setFontSize(7);
      doc.setTextColor(120, 120, 120);
      doc.text("INF. SISTEMA:", 14, 275);
-     doc.text(`Versão do sistema: 1.0.0`, 14, 280);
+      doc.text(`Versão do sistema: ${APP_VERSION}`, 14, 280);
      doc.text(`Gerado em ${formatDateTime(now)}`, 14, 283);
      doc.text(`Documento: ${docId}`, 14, 286);
      doc.text(`Gerado por: ${operadorNome}`, 14, 289);
