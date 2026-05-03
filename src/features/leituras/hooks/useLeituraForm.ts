@@ -8,7 +8,7 @@ import { saveOfflineLeitura } from "@/services/sync-service";
 import { logAudit } from "@/lib/audit";
 import { calcComissao } from "@/lib/format";
 import { calcularVariacao, type VariacaoLeitura } from "@/utils/reading-calculations";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 
 export interface MaquinaOpt {
   id: string;
@@ -41,7 +41,7 @@ export function useLeituraForm() {
    const clienteIdParam = searchParams.get("cliente_id") || searchParams.get("cliente");
   const [maquinaId, setMaquinaId] = useState(maquinaIdParam || "");
   const [isScanning, setIsScanning] = useState(false);
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   const [contadorEntradaAtual, setContadorEntradaAtual] = useState("");
   const [contadorSaidaAtual, setContadorSaidaAtual] = useState("");
   const [valorPorCredito, setValorPorCredito] = useState("1,00");
@@ -92,15 +92,22 @@ export function useLeituraForm() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     if (isScanning && !scannerRef.current) {
       timer = setTimeout(() => {
-        const scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: { width: 250, height: 250 } }, false);
+        const scanner = new Html5Qrcode("qr-reader");
         scannerRef.current = scanner;
-        scanner.render(onScanSuccess, () => {});
+        scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          onScanSuccess,
+          () => {}
+        ).catch((err) => {
+          console.error("Erro ao iniciar câmera:", err);
+        });
       }, 100);
     }
     return () => {
       if (timer) clearTimeout(timer);
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(err => console.error("Error clearing scanner:", err));
+        scannerRef.current.stop().catch(err => console.error("Error stopping scanner:", err));
         scannerRef.current = null;
       }
     };
