@@ -28,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
         modernPolyfills: true,
       }),
-     VitePWA({
-       registerType: "prompt",
+      VitePWA({
+        registerType: "autoUpdate",
        devOptions: { enabled: false },
        includeAssets: ["favicon.ico", "robots.txt", "placeholder.svg"],
        manifest: {
