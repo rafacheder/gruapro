@@ -104,13 +104,26 @@ export function useLeituraForm() {
         });
       }, 100);
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(err => console.error("Error stopping scanner:", err));
-        scannerRef.current = null;
-      }
-    };
+     return () => {
+       if (timer) clearTimeout(timer);
+       if (scannerRef.current) {
+         const scanner = scannerRef.current;
+         scannerRef.current = null;
+         // Html5Qrcode.stop() is async and manipulates DOM. 
+         // Checking state prevents errors if already stopped/cleared.
+         try {
+           if (scanner.getState() !== 1) { // 1 = IDLE/NOT_STARTED
+             scanner.stop()
+               .then(() => {
+                 try { scanner.clear(); } catch (e) { /* ignore */ }
+               })
+               .catch(err => console.warn("Scanner stop error (expected if unmounting):", err));
+           }
+         } catch (e) {
+           console.warn("Scanner cleanup error:", e);
+         }
+       }
+     };
   }, [isScanning, onScanSuccess]);
 
    useEffect(() => {
