@@ -1,21 +1,15 @@
-## Problema
+## Objetivo
+Definir a senha `123@mudar!` para o usuário `homero@system.local`.
 
-Atualmente o QR scanner usa `Html5QrcodeScanner` que renderiza uma UI completa com botões "Request Camera Permissions" e "Scan an Image File". O operador precisa clicar novamente para abrir a câmera, o que é desnecessário.
+## Passos
+1. Localizar o `id` do usuário em `auth.users` pelo email `homero@system.local` (via read_query) para confirmar que existe.
+2. Atualizar a senha usando a API admin do Supabase. Como o projeto já tem a edge function `manage-users` com `SUPABASE_SERVICE_ROLE_KEY`, vou:
+   - Adicionar uma nova ação `reset_password` em `supabase/functions/manage-users/index.ts` que aceita `{ action: "reset_password", user_id, new_password }` e chama `adminClient.auth.admin.updateUserById(user_id, { password })`.
+   - Restringir a ação a quem tem role `master` ou `admin` (mesma checagem já existente).
+3. Após deploy automático, invocar a função uma vez para o usuário Homero com a senha `123@mudar!`, usando `supabase--curl_edge_functions` autenticado como master.
+4. Confirmar sucesso (status 200 e ausência de erro nos logs).
 
-## Solução
-
-Substituir `Html5QrcodeScanner` por `Html5Qrcode` (a API de nível mais baixo da mesma biblioteca). Isso permite iniciar a câmera traseira diretamente via `html5Qrcode.start()` com `facingMode: "environment"`, sem UI intermediária.
-
-## Mudanças
-
-### `src/features/leituras/hooks/useLeituraForm.ts`
-
-1. Trocar o import de `Html5QrcodeScanner` para `Html5Qrcode`.
-2. Alterar o `scannerRef` para `useRef<Html5Qrcode | null>`.
-3. No `useEffect` de scanning, substituir a lógica:
-   - Criar `new Html5Qrcode("qr-reader")`
-   - Chamar `scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess, () => {})`
-   - Isso abre a câmera traseira automaticamente sem nenhum clique adicional.
-4. No cleanup, chamar `scanner.stop()` em vez de `scanner.clear()`.
-
-Nenhuma outra alteração necessária -- o container `#qr-reader` no `MachineSelector.tsx` continua sendo usado.
+## Observações
+- A senha não será exposta na UI; só será aplicada via chamada única.
+- Não altera dados de perfil nem role do Homero.
+- Caso prefira, posso também adicionar um botão "Redefinir senha" na tela de Usuários para usos futuros — diga se quer incluir.
