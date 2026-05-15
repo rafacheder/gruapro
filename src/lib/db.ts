@@ -18,7 +18,12 @@
    percentual_comissao: number;
    data_leitura: string;
    usuario_id: string;
-   status: 'pending' | 'syncing' | 'error' | 'synced';
+   status: 'pending' | 'syncing' | 'error' | 'synced' | 'conflict';
+   conflict_data?: {
+     server_contador_entrada_atual?: number;
+     server_contador_saida_atual?: number;
+     server_data_leitura?: string;
+   };
    synced_at?: number;
    error_message?: string;
    created_at: number;
