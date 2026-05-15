@@ -38,39 +38,80 @@ serve(async (req) => {
 
     const { action, ...payload } = await req.json()
 
-    if (action === 'create') {
-      const { username, password, nome_completo } = payload
-      
-      // If it doesn't look like an email, make it one
-      const email = username.includes('@') ? username : `${username}@system.local`
+    switch (action) {
+      case 'create': {
+        const { username, password, nome_completo } = payload
+        // If it doesn't look like an email, make it one
+        const email = username.includes('@') ? username : `${username}@system.local`
 
-      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { nome_completo }
-      })
+        const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: { nome_completo }
+        })
 
-       if (createError) throw createError
- 
-       return new Response(JSON.stringify(newUser), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
+        if (createError) throw createError
+
+        return new Response(JSON.stringify(newUser), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+
+      case 'update': {
+        const { user_id, email, password, nome_completo } = payload
+        if (!user_id) throw new Error('user_id is required')
+
+        const updateData: any = {}
+        if (email) updateData.email = email
+        if (password) updateData.password = password
+        if (nome_completo) updateData.user_metadata = { nome_completo }
+
+        const { data, error } = await adminClient.auth.admin.updateUserById(user_id, updateData)
+        if (error) throw error
+
+        // Explicitly update profiles table as well to keep it in sync
+        if (nome_completo || email) {
+          const profileUpdate: any = {}
+          if (nome_completo) profileUpdate.nome_completo = nome_completo
+          if (email) profileUpdate.email = email
+          await adminClient.from('profiles').update(profileUpdate).eq('id', user_id)
+        }
+
+        return new Response(JSON.stringify({ ok: true, user: data.user }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+
+      case 'delete': {
+        const { user_id } = payload
+        if (!user_id) throw new Error('user_id is required')
+
+        const { error } = await adminClient.auth.admin.deleteUser(user_id)
+        if (error) throw error
+
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+
+      case 'reset_password': {
+        const { user_id, new_password } = payload
+        if (!user_id || !new_password) throw new Error('user_id and new_password are required')
+        const { data, error } = await adminClient.auth.admin.updateUserById(user_id, { password: new_password })
+        if (error) throw error
+        return new Response(JSON.stringify({ ok: true, user: data.user }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+
+      default:
+        throw new Error('Invalid action')
     }
-
-    if (action === 'reset_password') {
-      const { user_id, new_password } = payload
-      if (!user_id || !new_password) throw new Error('user_id and new_password are required')
-      const { data, error } = await adminClient.auth.admin.updateUserById(user_id, { password: new_password })
-      if (error) throw error
-      return new Response(JSON.stringify({ ok: true, user: data.user }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      })
-    }
-
-    throw new Error('Invalid action')
    } catch (error: any) {
      return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
