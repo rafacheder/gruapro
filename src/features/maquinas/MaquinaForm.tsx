@@ -12,7 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { logAudit } from "@/lib/audit";
-import { useAuth, canManageData } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { z } from "zod";
 
 const schema = z.object({

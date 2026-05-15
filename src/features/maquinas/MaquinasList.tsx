@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
-import { useAuth, canManageData } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Cpu, Loader2 } from "lucide-react";
 
  import { useMaquinas } from "./hooks/useMaquinas";

@@ -14,7 +14,7 @@ import { maskCEP, maskPhone, onlyDigits } from "@/lib/format";
 import { buscarCEP } from "@/lib/viacep";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
-import { useAuth, canManageData } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const schema = z.object({
   nome_ponto: z.string().trim().min(1, "Obrigatório").max(200),

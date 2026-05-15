@@ -1,6 +1,6 @@
  import { ReactNode, useMemo, useCallback, memo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth, canManageData } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
   import { LayoutDashboard, Users, Cpu, ClipboardList, Plus, LogOut, Shield, ScrollText, Menu, AlertTriangle, CreditCard, FileText } from "lucide-react";
  import SyncStatusBadge from "./SyncStatusBadge";

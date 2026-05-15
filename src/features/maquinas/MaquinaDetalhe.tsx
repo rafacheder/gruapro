@@ -10,7 +10,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
 import PageHeader from "@/components/PageHeader";
-import { useAuth, canManageData, canSeeFinancials, isUser } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
  import { ArrowLeft, Pencil, Trash2, ClipboardList, Plus, Loader2, QrCode, Download } from "lucide-react";
  import QRCode from "qrcode";
  import { jsPDF } from "jspdf";

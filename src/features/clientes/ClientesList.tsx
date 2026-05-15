@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
-import { useAuth, canManageData, canSeeFinancials } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Users, Loader2 } from "lucide-react";
 import { useClientes } from "./hooks/useClientes";
 import { ClienteCard } from "./components/ClienteCard";
