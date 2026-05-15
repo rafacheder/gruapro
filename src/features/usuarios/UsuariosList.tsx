@@ -192,6 +192,67 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
           ))}
         </div>
       )}
-    </div>
-  );
-}
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={updateUser} className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.nome_completo}
+                  onChange={(e) => setEditData({ ...editData, nome_completo: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Nova Senha (deixe em branco para não alterar)</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={editData.password}
+                  onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full bg-accent" disabled={isUpdating}>
+                {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Salvar Alterações
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remover Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              Tem certeza que deseja remover o usuário <strong>{selectedUser?.nome_completo || selectedUser?.email}</strong>? 
+              Esta ação não pode ser desfeita.
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+              <Button variant="destructive" onClick={deleteUser} disabled={isDeleting}>
+                {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Remover
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
