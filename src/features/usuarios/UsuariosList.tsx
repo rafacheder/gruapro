@@ -161,19 +161,33 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
                 <div className="font-semibold truncate">{r.nome_completo || "—"}</div>
                 <div className="text-xs text-muted-foreground truncate">{r.email}</div>
               </div>
-              <Badge variant={r.ativo ? "default" : "secondary"}>{r.ativo ? "ativo" : "inativo"}</Badge>
-              {myRole === "master" ? (
-                <Select value={r.role ?? "usuario"} onValueChange={(v: AppRole) => changeRole(r.id, v)}>
-                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="usuario">Usuário</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="master">Master</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge variant="outline" className="capitalize">{r.role ?? "—"}</Badge>
-              )}
+               <div className="flex items-center gap-2">
+                 <Badge variant={r.ativo ? "default" : "secondary"}>{r.ativo ? "ativo" : "inativo"}</Badge>
+                 
+                 {myRole === "master" ? (
+                   <Select value={r.role ?? "usuario"} onValueChange={(v: AppRole) => changeRole(r.id, v)}>
+                     <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="usuario">Usuário</SelectItem>
+                       <SelectItem value="admin">Admin</SelectItem>
+                       <SelectItem value="master">Master</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 ) : (
+                   <Badge variant="outline" className="capitalize">{r.role ?? "—"}</Badge>
+                 )}
+
+                 {(myRole === "master" || myRole === "admin") && r.id !== user?.id && (
+                   <div className="flex gap-1">
+                     <Button size="icon" variant="ghost" onClick={() => handleEdit(r)} className="h-8 w-8">
+                       <Edit className="h-4 w-4" />
+                     </Button>
+                     <Button size="icon" variant="ghost" onClick={() => confirmDelete(r)} className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   </div>
+                 )}
+               </div>
             </Card>
           ))}
         </div>
