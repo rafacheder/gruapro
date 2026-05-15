@@ -16,15 +16,31 @@
    }
  
    static getDerivedStateFromError(error: Error) {
-     return { hasError: true, error };
+     // Se for o erro de removeChild (comum com extensões de tradução ou libs de terceiros)
+     // tentamos um auto-recovery marcando para recarregar silenciosamente ou apenas ignorar o crash total
+     if (error.message?.includes('removeChild') || error.message?.includes('insertBefore')) {
+       return { hasError: true, error, isDOMError: true };
+     }
+     return { hasError: true, error, isDOMError: false };
    }
  
    componentDidCatch(error: Error, info: any) {
      console.error('App error:', error, info);
    }
  
+   componentDidUpdate(_prevProps: Props, prevState: State) {
+     // Se for um erro de DOM (removeChild), recarregamos a página automaticamente após um curto delay
+     // Isso resolve o problema sem o usuário precisar clicar em nada
+     if (this.state.hasError && !prevState.hasError && (this.state as any).isDOMError) {
+       console.warn("DOM node error detected. Attempting auto-recovery via reload...");
+       setTimeout(() => {
+         window.location.reload();
+       }, 500);
+     }
+   }
+
    render() {
-     if (this.state.hasError) {
+     if (this.state.hasError && !(this.state as any).isDOMError) {
        return (
          <div style={{
            padding: '20px',
