@@ -59,6 +59,17 @@ serve(async (req) => {
       })
     }
 
+    if (action === 'reset_password') {
+      const { user_id, new_password } = payload
+      if (!user_id || !new_password) throw new Error('user_id and new_password are required')
+      const { data, error } = await adminClient.auth.admin.updateUserById(user_id, { password: new_password })
+      if (error) throw error
+      return new Response(JSON.stringify({ ok: true, user: data.user }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
     throw new Error('Invalid action')
    } catch (error: any) {
      return new Response(JSON.stringify({ error: error.message || 'Unknown error' }), {
