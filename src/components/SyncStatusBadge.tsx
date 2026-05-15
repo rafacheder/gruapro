@@ -1,7 +1,7 @@
  import { useLiveQuery } from "dexie-react-hooks";
  import { db } from "@/lib/db";
  import { useOnlineStatus } from "@/hooks/use-online-status";
-import { Cloud, CloudOff, RefreshCw, AlertCircle, Trash2, Send, AlertTriggerOctagon, ShieldAlert } from "lucide-react";
+import { Cloud, CloudOff, RefreshCw, AlertCircle, Trash2, Send, ShieldAlert } from "lucide-react";
  import { Button } from "./ui/button";
  import {
    Sheet,
