@@ -14,7 +14,7 @@ import EmptyState from "@/components/EmptyState";
    DropdownMenuTrigger,
  } from "@/components/ui/dropdown-menu";
  import { toast } from "sonner";
-import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatBRL, formatDateTime, formatPercent } from "@/lib/format";
 import { calcularVariacao } from "@/utils/reading-calculations";
  import { ReadingFilters, FilterState } from "./components/ReadingFilters";

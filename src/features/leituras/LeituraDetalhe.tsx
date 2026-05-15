@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PageHeader from "@/components/PageHeader";
-import { useAuth, canSeeFinancials } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
  import {
    ArrowLeft,
    FileDown,
@@ -43,7 +43,7 @@ export default function LeituraDetalhe() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { role, nome, user } = useAuth();
-  const showFinancials = canSeeFinancials(role);
+  const showFinancials = true;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leitura, setLeitura] = useState<any>(null);
