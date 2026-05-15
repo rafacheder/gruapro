@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from "@/components/PageHeader";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
- import { Loader2, Plus, UserPlus } from "lucide-react";
- import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+ import { Edit, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -17,9 +17,63 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
 
  export default function UsuariosList() {
    const { role: myRole, user } = useAuth();
-   const { usuarios, loading, createUser: createUserHook, changeRole: changeRoleHook, isCreating } = useUsuarios();
-   const [open, setOpen] = useState(false);
+    const { 
+      usuarios, 
+      loading, 
+      createUser: createUserHook, 
+      updateUser: updateUserHook, 
+      deleteUser: deleteHook, 
+      changeRole: changeRoleHook, 
+      isCreating,
+      isUpdating,
+      isDeleting
+    } = useUsuarios();
+
+    const [open, setOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+
    const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
+    const [editData, setEditData] = useState({ email: "", password: "", nome_completo: "" });
+
+    const handleEdit = (u: any) => {
+      setSelectedUser(u);
+      setEditData({ email: u.email || "", password: "", nome_completo: u.nome_completo || "" });
+      setEditOpen(true);
+    };
+
+    const updateUser = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        await updateUserHook({
+          user_id: selectedUser.id,
+          email: editData.email,
+          nome_completo: editData.nome_completo,
+          ...(editData.password ? { password: editData.password } : {})
+        });
+        toast.success("Usuário atualizado");
+        setEditOpen(false);
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao atualizar");
+      }
+    };
+
+    const confirmDelete = (u: any) => {
+      setSelectedUser(u);
+      setDeleteOpen(true);
+    };
+
+    const deleteUser = async () => {
+      try {
+        await deleteHook(selectedUser.id);
+        toast.success("Usuário removido");
+        setDeleteOpen(false);
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao remover");
+      }
+    };
+
    const createUser = async (e: React.FormEvent) => {
      e.preventDefault();
      try {
