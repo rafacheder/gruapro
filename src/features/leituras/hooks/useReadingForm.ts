@@ -33,7 +33,7 @@ export function useReadingForm() {
           id,
           codigo_identificacao,
           cliente_id,
-          clientes (
+          clientes:cliente_id (
             nome_ponto,
             percentual_comissao
           )
@@ -46,15 +46,19 @@ export function useReadingForm() {
         return;
       }
       if (data) {
-        const mapped = data.map((m: any) => ({
-          id: m.id,
-          codigo_identificacao: m.codigo_identificacao,
-          cliente_id: m.cliente_id,
-          clientes: {
-            nome_ponto: m.clientes?.nome_ponto,
-            percentual_comissao: m.clientes?.percentual_comissao || 0,
-          },
-        }));
+        const mapped = data.map((m: any) => {
+          // Try to get from joined clientes (relational) or clients:cliente_id (explicit join)
+          const clientData = m.clientes || m.clientes_cliente_id;
+          return {
+            id: m.id,
+            codigo_identificacao: m.codigo_identificacao,
+            cliente_id: m.cliente_id,
+            clientes: {
+              nome_ponto: clientData?.nome_ponto,
+              percentual_comissao: clientData?.percentual_comissao || 0,
+            },
+          };
+        });
         setMaquinas(mapped as MaquinaOpt[]);
       }
     };
