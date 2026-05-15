@@ -25,21 +25,39 @@ export async function saveOfflineLeitura(
   }
 }
 
-export async function syncPendingLeituras() {
-  const pending = await db.pendingLeituras
-    .where('status')
-    .anyOf(['pending', 'error'])
-    .toArray();
+const ZOMBIE_THRESHOLD_MS = 5 * 60 * 1000;
 
-  if (pending.length === 0) return;
+async function syncOneLeitura(leitura: PendingLeitura, force: boolean) {
+  try {
+    await db.pendingLeituras.update(leitura.id!, { status: 'syncing' });
 
-  for (const leitura of pending) {
-    try {
-      await db.pendingLeituras.update(leitura.id!, { status: 'syncing' });
+    // Conflict check: someone else may have inserted a newer reading for this machine
+    if (!force) {
+      const { data: lastReal } = await supabase
+        .from('vw_leituras_com_anterior')
+        .select('contador_entrada_atual, contador_saida_atual, data_leitura')
+        .eq('maquina_id', leitura.maquina_id)
+        .order('data_leitura', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      const { data: inserted, error: insErr } = await supabase
-        .from('leituras')
-        .insert({
+      if (lastReal && lastReal.data_leitura && lastReal.data_leitura > leitura.data_leitura) {
+        await db.pendingLeituras.update(leitura.id!, {
+          status: 'conflict',
+          error_message: `Conflito: outra leitura foi feita online em ${lastReal.data_leitura}. Verifique com admin.`,
+          conflict_data: {
+            server_contador_entrada_atual: lastReal.contador_entrada_atual ?? undefined,
+            server_contador_saida_atual: lastReal.contador_saida_atual ?? undefined,
+            server_data_leitura: lastReal.data_leitura,
+          },
+        });
+        return;
+      }
+    }
+
+    const { data: inserted, error: insErr } = await supabase
+      .from('leituras')
+      .insert({
           maquina_id: leitura.maquina_id,
           cliente_id: leitura.cliente_id,
           usuario_id: leitura.usuario_id,
@@ -56,25 +74,24 @@ export async function syncPendingLeituras() {
           contador_entrada_anterior: leitura.contador_entrada_anterior,
           contador_saida_anterior: leitura.contador_saida_anterior,
           valor_por_credito: leitura.valor_por_credito,
-        })
-        .select('id')
-        .single();
+      })
+      .select('id')
+      .single();
 
-      if (insErr) throw insErr;
+    if (insErr) throw insErr;
 
-      const fotos = await db.pendingFotos
+    const fotos = await db.pendingFotos
         .where('tempLeituraId')
         .equals(leitura.tempId)
         .toArray();
 
-      // Parallelize photo uploads for efficiency
-      const uploadPromises = fotos.map(async (foto, i) => {
+    const uploadPromises = fotos.map(async (foto, i) => {
         const path = `${inserted.id}/${i + 1}-${Date.now()}.jpg`;
-        
+
         const { error: upErr } = await supabase.storage
           .from('leitura-fotos')
           .upload(path, foto.blob, { contentType: 'image/jpeg' });
-          
+
         if (upErr) {
           throw new Error(`Erro ao enviar foto ${i + 1}: ${upErr.message}`);
         }
@@ -86,36 +103,64 @@ export async function syncPendingLeituras() {
          });
 
         if (dbErr) throw dbErr;
-      });
+    });
 
-      // Use allSettled or catch individual errors if we want partial success, 
-      // but for sync it's safer to either succeed or stay in 'error' status.
-      await Promise.all(uploadPromises);
+    await Promise.all(uploadPromises);
 
-      await logAudit({
+    await logAudit({
         acao: 'CREATE_LEITURA',
         tabela: 'leituras',
         registro_id: inserted.id,
-        dados_depois: { 
-          valor_faturado: leitura.valor_faturado, 
+      dados_depois: {
+        valor_faturado: leitura.valor_faturado,
           percentual: leitura.percentual_comissao,
-          offline: true 
+        offline: true,
+        forced: force || undefined,
         },
-      });
+    });
 
-      await db.pendingLeituras.update(leitura.id!, { 
+    await db.pendingLeituras.update(leitura.id!, {
         status: 'synced',
-        synced_at: Date.now()
-      });
-
-    } catch (err: any) {
-      console.error('Sync failed for leitura:', leitura.id, err);
-      await db.pendingLeituras.update(leitura.id!, { 
-        status: 'error', 
-        error_message: err.message || 'Erro desconhecido' 
-      });
-    }
+      synced_at: Date.now(),
+    });
+  } catch (err: any) {
+    console.error('Sync failed for leitura:', leitura.id, err);
+    await db.pendingLeituras.update(leitura.id!, {
+      status: 'error',
+      error_message: err.message || 'Erro desconhecido',
+    });
   }
+}
+
+export async function syncPendingLeituras() {
+  const zombieThreshold = Date.now() - ZOMBIE_THRESHOLD_MS;
+  const pending = await db.pendingLeituras
+    .filter(
+      (l) =>
+        l.status === 'pending' ||
+        l.status === 'error' ||
+        (l.status === 'syncing' && l.created_at < zombieThreshold)
+    )
+    .toArray();
+
+  if (pending.length === 0) return;
+
+  for (const leitura of pending) {
+    await syncOneLeitura(leitura, false);
+  }
+}
+
+export async function forceSyncLeitura(id: number) {
+  const leitura = await db.pendingLeituras.get(id);
+  if (!leitura) return;
+  await syncOneLeitura(leitura, true);
+}
+
+export async function discardConflictLeitura(id: number) {
+  const leitura = await db.pendingLeituras.get(id);
+  if (!leitura) return;
+  await db.pendingFotos.where('tempLeituraId').equals(leitura.tempId).delete();
+  await db.pendingLeituras.delete(id);
 }
 
 export async function cleanupSyncedLeituras() {
