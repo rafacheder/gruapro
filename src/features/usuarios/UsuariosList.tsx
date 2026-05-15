@@ -57,7 +57,12 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
         toast.success("Usuário atualizado");
         setEditOpen(false);
       } catch (err: any) {
-        toast.error(err.message || "Erro ao atualizar");
+        const msg = err?.message || "";
+        if (msg.includes("weak") || msg.includes("Password")) {
+          toast.error("Senha muito fraca ou comum. Use uma combinação de letras, números e símbolos.");
+        } else {
+          toast.error(msg || "Erro ao atualizar");
+        }
       }
     };
 
@@ -84,7 +89,12 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
        setOpen(false);
        setFormData({ username: "", password: "", nome_completo: "" });
      } catch (err: any) {
-       toast.error(err.message || "Erro ao criar usuário");
+      const msg = err?.message || "";
+      if (msg.includes("weak") || msg.includes("Password")) {
+        toast.error("Senha muito fraca ou comum. Use uma combinação de letras, números e símbolos.");
+      } else {
+        toast.error(msg || "Erro ao criar usuário");
+      }
      }
    };
 
