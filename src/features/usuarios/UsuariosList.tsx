@@ -6,8 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from "@/components/PageHeader";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
- import { Loader2, Plus, UserPlus } from "lucide-react";
- import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+ import { Edit, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
+ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
  import { Label } from "@/components/ui/label";
@@ -17,9 +17,63 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
 
  export default function UsuariosList() {
    const { role: myRole, user } = useAuth();
-   const { usuarios, loading, createUser: createUserHook, changeRole: changeRoleHook, isCreating } = useUsuarios();
-   const [open, setOpen] = useState(false);
+    const { 
+      usuarios, 
+      loading, 
+      createUser: createUserHook, 
+      updateUser: updateUserHook, 
+      deleteUser: deleteHook, 
+      changeRole: changeRoleHook, 
+      isCreating,
+      isUpdating,
+      isDeleting
+    } = useUsuarios();
+
+    const [open, setOpen] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+
    const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
+    const [editData, setEditData] = useState({ email: "", password: "", nome_completo: "" });
+
+    const handleEdit = (u: any) => {
+      setSelectedUser(u);
+      setEditData({ email: u.email || "", password: "", nome_completo: u.nome_completo || "" });
+      setEditOpen(true);
+    };
+
+    const updateUser = async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        await updateUserHook({
+          user_id: selectedUser.id,
+          email: editData.email,
+          nome_completo: editData.nome_completo,
+          ...(editData.password ? { password: editData.password } : {})
+        });
+        toast.success("Usuário atualizado");
+        setEditOpen(false);
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao atualizar");
+      }
+    };
+
+    const confirmDelete = (u: any) => {
+      setSelectedUser(u);
+      setDeleteOpen(true);
+    };
+
+    const deleteUser = async () => {
+      try {
+        await deleteHook(selectedUser.id);
+        toast.success("Usuário removido");
+        setDeleteOpen(false);
+      } catch (err: any) {
+        toast.error(err.message || "Erro ao remover");
+      }
+    };
+
    const createUser = async (e: React.FormEvent) => {
      e.preventDefault();
      try {
@@ -107,23 +161,98 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
                 <div className="font-semibold truncate">{r.nome_completo || "—"}</div>
                 <div className="text-xs text-muted-foreground truncate">{r.email}</div>
               </div>
-              <Badge variant={r.ativo ? "default" : "secondary"}>{r.ativo ? "ativo" : "inativo"}</Badge>
-              {myRole === "master" ? (
-                <Select value={r.role ?? "usuario"} onValueChange={(v: AppRole) => changeRole(r.id, v)}>
-                  <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="usuario">Usuário</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="master">Master</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Badge variant="outline" className="capitalize">{r.role ?? "—"}</Badge>
-              )}
+               <div className="flex items-center gap-2">
+                 <Badge variant={r.ativo ? "default" : "secondary"}>{r.ativo ? "ativo" : "inativo"}</Badge>
+                 
+                 {myRole === "master" ? (
+                   <Select value={r.role ?? "usuario"} onValueChange={(v: AppRole) => changeRole(r.id, v)}>
+                     <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                     <SelectContent>
+                       <SelectItem value="usuario">Usuário</SelectItem>
+                       <SelectItem value="admin">Admin</SelectItem>
+                       <SelectItem value="master">Master</SelectItem>
+                     </SelectContent>
+                   </Select>
+                 ) : (
+                   <Badge variant="outline" className="capitalize">{r.role ?? "—"}</Badge>
+                 )}
+
+                 {(myRole === "master" || myRole === "admin") && r.id !== user?.id && (
+                   <div className="flex gap-1">
+                     <Button size="icon" variant="ghost" onClick={() => handleEdit(r)} className="h-8 w-8">
+                       <Edit className="h-4 w-4" />
+                     </Button>
+                     <Button size="icon" variant="ghost" onClick={() => confirmDelete(r)} className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                       <Trash2 className="h-4 w-4" />
+                     </Button>
+                   </div>
+                 )}
+               </div>
             </Card>
           ))}
         </div>
       )}
-    </div>
-  );
-}
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Usuário</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={updateUser} className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nome Completo</Label>
+                <Input
+                  id="edit-name"
+                  value={editData.nome_completo}
+                  onChange={(e) => setEditData({ ...editData, nome_completo: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">Email</Label>
+                <Input
+                  id="edit-email"
+                  value={editData.email}
+                  onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Nova Senha (deixe em branco para não alterar)</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  value={editData.password}
+                  onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full bg-accent" disabled={isUpdating}>
+                {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Salvar Alterações
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remover Usuário</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              Tem certeza que deseja remover o usuário <strong>{selectedUser?.nome_completo || selectedUser?.email}</strong>? 
+              Esta ação não pode ser desfeita.
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
+              <Button variant="destructive" onClick={deleteUser} disabled={isDeleting}>
+                {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Remover
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }

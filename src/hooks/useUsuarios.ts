@@ -34,19 +34,45 @@
      },
    });
  
-   const createMutation = useMutation({
-     mutationFn: async (formData: any) => {
-       const { data, error } = await supabase.functions.invoke("manage-users", {
-         body: { action: "create", ...formData },
-       });
-       if (error) throw error;
-       return data;
-     },
-     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: USUARIOS_QUERY_KEY });
-     },
-   });
- 
+    const createMutation = useMutation({
+      mutationFn: async (formData: any) => {
+        const { data, error } = await supabase.functions.invoke("manage-users", {
+          body: { action: "create", ...formData },
+        });
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: USUARIOS_QUERY_KEY });
+      },
+    });
+
+    const updateMutation = useMutation({
+      mutationFn: async ({ user_id, ...payload }: { user_id: string; email?: string; password?: string; nome_completo?: string }) => {
+        const { data, error } = await supabase.functions.invoke("manage-users", {
+          body: { action: "update", user_id, ...payload },
+        });
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: USUARIOS_QUERY_KEY });
+      },
+    });
+
+    const deleteMutation = useMutation({
+      mutationFn: async (user_id: string) => {
+        const { data, error } = await supabase.functions.invoke("manage-users", {
+          body: { action: "delete", user_id },
+        });
+        if (error) throw error;
+        return data;
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: USUARIOS_QUERY_KEY });
+      },
+    });
+
    const changeRoleMutation = useMutation({
      mutationFn: async ({ uid, newRole }: { uid: string, newRole: AppRole }) => {
        await supabase.from("user_roles").delete().eq("user_id", uid);
@@ -62,9 +88,13 @@
      usuarios: query.data || [],
      loading: query.isLoading,
      error: query.error,
-     createUser: createMutation.mutateAsync,
-     changeRole: changeRoleMutation.mutateAsync,
-     isCreating: createMutation.isPending,
-     isChangingRole: changeRoleMutation.isPending,
+      createUser: createMutation.mutateAsync,
+      updateUser: updateMutation.mutateAsync,
+      deleteUser: deleteMutation.mutateAsync,
+      changeRole: changeRoleMutation.mutateAsync,
+      isCreating: createMutation.isPending,
+      isUpdating: updateMutation.isPending,
+      isDeleting: deleteMutation.isPending,
+      isChangingRole: changeRoleMutation.isPending,
    };
  }
