@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import PageHeader from "@/components/PageHeader";
 import { useAuth, AppRole } from "@/contexts/AuthContext";
 import { toast } from "sonner";
- import { Edit, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
+ import { Edit, Eye, EyeOff, Loader2, Plus, Trash2, UserPlus } from "lucide-react";
  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
  import { Button } from "@/components/ui/button";
  import { Input } from "@/components/ui/input";
@@ -34,8 +34,10 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
 
-   const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
-    const [editData, setEditData] = useState({ email: "", password: "", nome_completo: "" });
+    const [formData, setFormData] = useState({ username: "", password: "", nome_completo: "" });
+     const [editData, setEditData] = useState({ email: "", password: "", nome_completo: "" });
+     const [showPassword, setShowPassword] = useState(false);
+     const [showEditPassword, setShowEditPassword] = useState(false);
 
     const handleEdit = (u: any) => {
       setSelectedUser(u);
@@ -132,17 +134,29 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
                    placeholder="Ex: joao"
                  />
                </div>
-               <div className="space-y-2">
-                 <Label htmlFor="new-password">Senha</Label>
-                 <Input
-                   id="new-password"
-                   type="password"
-                   value={formData.password}
-                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                   required
-                   minLength={6}
-                 />
-               </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      minLength={6}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    </Button>
+                  </div>
+                </div>
                 <Button type="submit" className="w-full bg-accent" disabled={isCreating}>
                   {isCreating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                  Criar Usuário
@@ -219,13 +233,25 @@ interface Row { id: string; nome_completo: string; email: string | null; ativo: 
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-password">Nova Senha (deixe em branco para não alterar)</Label>
-                <Input
-                  id="edit-password"
-                  type="password"
-                  value={editData.password}
-                  onChange={(e) => setEditData({ ...editData, password: e.target.value })}
-                  minLength={6}
-                />
+                <div className="relative">
+                  <Input
+                    id="edit-password"
+                    type={showEditPassword ? "text" : "password"}
+                    value={editData.password}
+                    onChange={(e) => setEditData({ ...editData, password: e.target.value })}
+                    minLength={6}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowEditPassword(!showEditPassword)}
+                  >
+                    {showEditPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
+                </div>
               </div>
               <Button type="submit" className="w-full bg-accent" disabled={isUpdating}>
                 {isUpdating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
